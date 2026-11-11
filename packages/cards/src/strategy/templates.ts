@@ -223,6 +223,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 export function strategyOptions(raw: unknown, template: Template): Record<string, unknown> {
   if (!isRecord(raw)) return {};
   const options: Record<string, unknown> = {};
+  // a person's own changes travel with the dashboard, whatever its template (they name its cards, its entities)
+  if (isRecord(raw['edit'])) options['edit'] = raw['edit'];
   for (const option of template.options) {
     const value = raw[option.key];
     if (option.kind === 'choice') {

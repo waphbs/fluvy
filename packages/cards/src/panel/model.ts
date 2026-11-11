@@ -41,6 +41,7 @@ import {
 import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
 import type { ChipFit } from '../shared/chips.js';
 import type { Template } from '../strategy/templates.js';
+import type { View } from '../strategy/types.js';
 import { chartLines } from './chart-words.js';
 import { knownPalettes, matchOf } from './palettes.js';
 import type { SeriesDraft } from './series.js';
@@ -145,6 +146,10 @@ export interface PanelContext {
   readonly dashboards: readonly DashboardInfo[];
   /** A dashboard's strategy as saved, with its edits on top (undefined: it is not one of ours). */
   strategyOf(urlPath: string): Readonly<Record<string, unknown>> | undefined;
+  /** The cards a dashboard's strategy draws right now, once the panel asked for them (undefined: not asked yet). */
+  previewOf(urlPath: string): readonly View[] | undefined;
+  /** Generates a dashboard's cards (with no edits on top) so a person can change them here. */
+  loadPreview(urlPath: string): void;
   setDraft(look: Partial<Look>): void;
   editHouse(edit: HouseEdit): void;
   /** A wall setting, on the latest of the wall's (two taps before a render never lose the first). */

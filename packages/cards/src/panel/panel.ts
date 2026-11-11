@@ -42,6 +42,8 @@ import { energySources, hasSources } from '../strategy/layout.js';
 
 import { TextRuler } from '../shared/fit.js';
 import { HOME_TEMPLATE, templateOf, type Template } from '../strategy/templates.js';
+import { generateWith } from '../strategy/generate.js';
+import type { FluvyStrategyConfig, View } from '../strategy/types.js';
 import { knownPalettes, matchOf } from './palettes.js';
 
 import {
@@ -81,6 +83,7 @@ import type { SeriesDraft } from './series.js';
 
 import {
   aboutFacts,
+  copyEditable,
   createDashboard,
   exportPalette,
   importPalette,
@@ -178,6 +181,9 @@ export class FluvyPanel extends LitElement {
   declare showAllCommunity: boolean;
   declare tryOnApp: boolean;
   declare dashboards: readonly DashboardInfo[];
+
+  /** The cards each automatic dashboard draws now, generated when a person opens its rows to change them. */
+  private readonly previews = new Map<string, View[]>();
   declare notice: string;
   declare resetArmed: boolean;
   /** The url path of the dashboard whose Recreate row is armed ('' when none). */
@@ -640,6 +646,22 @@ export class FluvyPanel extends LitElement {
     );
   }
 
+  /**
+   * Generates a dashboard's cards so a person can change them here: the template's own, with no edits on top, so the
+   * rows say what the house draws and what the person changed stands beside them.
+   */
+  private async loadPreview(urlPath: string): Promise<void> {
+    if (this.previews.has(urlPath)) return;
+    const info = this.dashboards.find((d) => d.urlPath === urlPath);
+    const template = info?.template;
+    const strategy = info?.strategy;
+    const hass = this.hass;
+    if (!template || !strategy || !hass) return;
+    const { views } = await generateWith(template, strategy as unknown as FluvyStrategyConfig, hass, `/${urlPath}`);
+    this.previews.set(urlPath, views);
+    this.requestUpdate();
+  }
+
   private context(): PanelContext | undefined {
     const handle = this.look;
     const hass = this.hass;
@@ -673,6 +695,10 @@ export class FluvyPanel extends LitElement {
       strategyOf: (urlPath) => {
         const saved = savedStrategy(urlPath);
         return saved && withEdit(saved, this.strategyEdits[urlPath] ?? {});
+      },
+      previewOf: (urlPath) => this.previews.get(urlPath),
+      loadPreview: (urlPath) => {
+        void this.loadPreview(urlPath);
       },
       setDraft: (look) => {
         this.draft = { ...(this.draft ?? draft), ...look };
@@ -781,6 +807,8 @@ export class FluvyPanel extends LitElement {
         config: { strategy: withEdit(saved, edit) },
       });
       written = true;
+      // what the rows show is the automatic drawing again: the edits only stand beside it, as their own rules
+      this.previews.delete(urlPath);
     }
     if (written) await this.loadDashboards();
     if (Object.keys(this.deviceEdit).length) {
@@ -891,6 +919,7 @@ export class FluvyPanel extends LitElement {
         return dashboards(ctx, {
           create: (template) => createDashboard(this, ctx, template),
           recreate: (urlPath) => recreateDashboard(this, ctx, urlPath),
+          copyEditable: (urlPath) => copyEditable(this, ctx, urlPath),
           open: (urlPath) => navigate(`/${urlPath}`),
           showInSidebar: (urlPath, on) => showInSidebar(this, ctx, urlPath, on),
           creating: this.creating,

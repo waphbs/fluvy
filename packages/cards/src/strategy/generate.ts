@@ -2,6 +2,7 @@
 import './english.js';
 import type { HomeAssistant } from '@fluvy/core';
 import { appliancesView } from './appliances.js';
+import { applyEdit, type DashboardEdit } from './edit.js';
 import { moreHost } from './caps.js';
 import { buildContext, framed, withCards } from './context.js';
 import { roomView } from './rooms.js';
@@ -31,12 +32,14 @@ export async function generateWith(
   // a template without the greeting opens its columns with nothing
   const ctx = template.header === 'hello' ? built : { ...built, header: 0 };
   const hidden = new Set(config.hide ?? []);
+  const edit = config.edit as DashboardEdit | undefined;
   const kept = viewsOf(template, ctx)
     .filter((spec, index) => index === 0 || !hidden.has(spec.key))
     .map((spec) => {
       const title = spec.name ?? ctx.t(spec.title);
       const more = moreHost(spec.key, title, spec.icon, template.columns);
-      return { spec, title, more, sections: withCards(spec.build({ ...ctx, more })) };
+      const sections = withCards(spec.build({ ...ctx, more }));
+      return { spec, title, more, sections: applyEdit(edit, spec.key, sections) };
     })
     .filter(
       ({ spec, sections }, index) =>
@@ -64,7 +67,10 @@ export async function generateWith(
       area.icon ?? 'fluvy:home',
       template.columns,
     );
-    return { view: roomView({ ...ctx, more }, area, template.columns, back), more };
+    const view = roomView({ ...ctx, more }, area, template.columns, back);
+    // a room's own page takes the same edits as any other view, named by its path
+    const sections = applyEdit(edit, view.path, view.sections);
+    return { view: { ...view, sections }, more };
   });
   const appliances =
     template.appliances && ctx.home.applianceDevices.length

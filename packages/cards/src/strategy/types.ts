@@ -9,6 +9,7 @@ import type { FlowStyle } from '../energy-flow/energy-flow-card.js';
 import type { ThermostatVariant } from '../thermostat/thermostat-card.js';
 import type { HomeRegistry } from './home-registry.js';
 import { type RoomVariant } from '../room/room-card.js';
+import type { DashboardEdit } from './edit.js';
 
 /*
  * What the automatic dashboards are made of: their configs, the cards and sections they lay out, the house's
@@ -103,6 +104,12 @@ export interface FluvyStrategyConfig {
    * (`sensor.debug_*`), device ids or domains, as a room's `exclude` takes them.
    */
   exclude?: readonly string[];
+  /**
+   * What a person changed on this dashboard, as differences from what it draws by itself: cards hidden or moved, an
+   * entity left out of one card or added to it, an order inside one (`edit.ts`). Anything not named stays automatic,
+   * so a device added later still arrives and none of the person's own edits move.
+   */
+  edit?: DashboardEdit;
 }
 
 /** The home dashboard's config: the same keys, its views by name. */

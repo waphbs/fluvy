@@ -59,6 +59,7 @@ import {
   roomFor,
 } from './palettes.js';
 import type { SelectChangeDetail, SelectOption } from '@fluvy/ui/select';
+import { editRows } from './edit-rows.js';
 import {
   CUSTOM_BASES,
   type CustomPalette,
@@ -1515,6 +1516,8 @@ function entitiesChoice(ctx: PanelContext, urlPath: string, current: unknown): T
 export interface DashboardActions {
   create(template: Template): void;
   recreate(urlPath: string): void;
+  /** Copies what this dashboard draws now into a plain dashboard Home Assistant's own editor edits freely. */
+  copyEditable(urlPath: string): void;
   open(urlPath: string): void;
   /** Lists a dashboard in Home Assistant's sidebar, or not. */
   showInSidebar(urlPath: string, on: boolean): void;
@@ -1585,6 +1588,7 @@ function dashboardOptions(
                 : optionChoice(ctx, dashboard.urlPath, option, strategy[option.key])
         }`;
     })}
+    ${ctx.admin ? editRows(ctx, dashboard, strategy) : nothing}
     ${
       ctx.admin
         ? html`<div class="pn-rows">
@@ -1599,6 +1603,13 @@ function dashboardOptions(
                   })
                 : nothing
             }
+            ${listRow({
+              icon: 'grid',
+              title: ctx.t('dashboard.copy_editable'),
+              sub: ctx.t('dashboard.copy_editable_sub'),
+              trailing: 'chevron',
+              onTap: () => actions.copyEditable(dashboard.urlPath),
+            })}
             ${listRow({
               icon: 'auto',
               tone: armed ? 'warning' : 'neutral',

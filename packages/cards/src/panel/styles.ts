@@ -438,6 +438,36 @@ export const panelStyles = css`
   .pn-fold[open] > summary {
     margin-block-end: 6px;
   }
+  /* a row's own end beside a switch: the two small arrows that change its place */
+  .pn-tools {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .pn-mini {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 14px;
+    background: none;
+    color: var(--ink-2);
+    font: inherit;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .pn-mini:hover:not(:disabled) {
+    background: var(--fill-2);
+    color: var(--ink);
+  }
+  .pn-mini:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+  /* a card's entities under it: inset from its row, so they read as its own */
+  .pn-edit-sub {
+    padding-inline-start: 12px;
+  }
   /* the dashboards' view tabs as a header shows them: the header's colour and hairline, its 56 line, the name at
      its weight; the tabs at their real size (a row longer than the card fades out at its end, as on a phone) */
   .pn-tabsmock {

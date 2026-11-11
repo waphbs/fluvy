@@ -1,6 +1,7 @@
 /** The fluvy panel's actions beyond the look: the automatic dashboards, the settings file, the reset, the facts. */
-import { HOUSE_DEFAULTS, PALETTE_SERIES, parseHouse, parsePersonal } from '@fluvy/core';
+import { HOUSE_DEFAULTS, navigate, PALETTE_SERIES, parseHouse, parsePersonal } from '@fluvy/core';
 import { HOME_TEMPLATE, strategyOptions, type Template } from '../strategy/templates.js';
+import type { FluvyStrategyConfig } from '../strategy/types.js';
 import { paletteFileName, parsePaletteFile, type PaletteFile } from '@fluvy/tokens/runtime';
 import type { PanelContext } from './model.js';
 import { withoutPalette, withPalette } from './palettes.js';
@@ -64,6 +65,47 @@ export function recreateDashboard(panel: FluvyPanel, ctx: PanelContext, urlPath:
     });
     await panel.loadDashboards();
   }, 'dashboard.recreated');
+}
+
+/**
+ * One tap copies what a dashboard draws *now* into a plain dashboard (`<url>-custom`), which Home Assistant's own
+ * editor then edits freely: every card, every entity, the order, the style. The automatic dashboard stays exactly as
+ * it is — the copy is a snapshot, so a device added later does not arrive in it by itself. A second tap overwrites the
+ * copy with the dashboard's current drawing.
+ */
+export function copyEditable(panel: FluvyPanel, ctx: PanelContext, urlPath: string): void {
+  const dashboard = panel.dashboards.find((entry) => entry.urlPath === urlPath);
+  const template = dashboard?.template;
+  const strategy = ctx.strategyOf(urlPath) ?? dashboard?.strategy;
+  if (!dashboard || !template || !strategy) return;
+  const target = `${urlPath}-custom`;
+  panel.run(async () => {
+    const { generateWith } = await import('../strategy/generate.js');
+    const { views } = await generateWith(
+      template,
+      strategy as unknown as FluvyStrategyConfig,
+      ctx.hass,
+      `/${target}`,
+    );
+    if (!panel.dashboards.some((entry) => entry.urlPath === target)) {
+      await ctx.hass.callWS({
+        type: 'lovelace/dashboards/create',
+        url_path: target,
+        title: `${dashboard.title} · ${ctx.t('dashboard.copy_suffix')}`,
+        icon: dashboard.icon ?? template.icon,
+        show_in_sidebar: false,
+        require_admin: false,
+        mode: 'storage',
+      });
+    }
+    await ctx.hass.callWS({
+      type: 'lovelace/config/save',
+      url_path: target,
+      config: { views },
+    });
+    await panel.loadDashboards();
+    navigate(`/${target}`);
+  }, 'dashboard.copied');
 }
 
 /** Lists a dashboard in Home Assistant's sidebar, or takes its entry out (the dashboard stays). */
