@@ -611,10 +611,25 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     };
   }
 
-  /** A source's name when there are several of its kind: its sensor's, short. */
+  /** A source's name when there are several of its kind: its device's, else its sensor's, short. */
   private nameOf(c: SourceConfig): string {
     const id = sourceIds(c)[0];
-    return id ? shortName(this.entity(id)) : this.kindName(c.type);
+    return (id && this.deviceName(id)) || (id ? shortName(this.entity(id)) : this.kindName(c.type));
+  }
+
+  /**
+   * Two inverters both call their energy sensor "yield": the device tells them apart. The registry name the user
+   * gave a device is the one they recognise, so it wins over the sensor's.
+   */
+  private deviceName(entityId: string): string | null {
+    const registries = this.hass as unknown as {
+      entities?: Record<string, { device_id?: string | null } | undefined>;
+      devices?: Record<string, { name?: string | null; name_by_user?: string | null } | undefined>;
+    };
+    const device = registries.entities?.[entityId]?.device_id;
+    const entry = device ? registries.devices?.[device] : undefined;
+    const name = (entry?.name_by_user ?? entry?.name ?? '').trim();
+    return name === '' ? null : name;
   }
 
   private periodNode(
@@ -628,7 +643,10 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     const same = all.filter((o) => o.kind === p.kind).length;
     const first = p.energyIn[0] ?? p.energyOut[0];
     const name =
-      p.name ?? (same > 1 && first ? shortName(this.entity(first)) : this.kindName(p.kind));
+      p.name ??
+      (same > 1 && first
+        ? (this.deviceName(first) ?? shortName(this.entity(first)))
+        : this.kindName(p.kind));
     const { ink, tone, accent } = this.inkOf(p.kind, undefined);
     const into = sum(p.energyIn);
     const out = oneWay(p.kind) ? (into === null ? null : 0) : sum(p.energyOut);
