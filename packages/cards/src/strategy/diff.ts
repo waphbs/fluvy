@@ -82,9 +82,10 @@ export function editFromCopy(copied: readonly View[], drawn: readonly View[]): C
       sequence.forEach((id, order) => (cards[id] = { ...(cards[id] ?? {}), order }));
   }
 
+  // notes name what the copy holds and the automatic dashboard cannot take; a card that is merely left out is
+  // already said by the count the row shows, so it is not a note
   for (const view of copied) if (!drawn.some((entry) => entry.path === view.path)) notes.push(view.path);
   if (extra) notes.push(`+${extra}`);
-  if (hidden) notes.push(`-${hidden}`);
 
   const empty = !Object.keys(cards).length && !Object.keys(entities).length;
   return {
