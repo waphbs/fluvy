@@ -177,6 +177,7 @@ export const PITCH = FLOW_PITCH;
 export const TEXT = 56; // 44 circle + 12
 export const RING = 34; // the house's ring (28) + 6
 export const LANE_MIN = 56; // a lane shorter than this is no lane: the card becomes its list
+export const WORDS_RESERVE = 120; // the words' room, whatever the figures say today
 
 export interface RowNode {
   /** Words' height (16 · 20 · 20) and width, measured by the card. */
@@ -221,7 +222,10 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
   const wide = consumers.length > 0;
   const house: Point = [wide ? o.width / 2 : o.width - 28, Math.round((TOP + last) / 2 / 4) * 4];
   const tail = up4(TEXT + Math.max(0, ...o.nodes.map((n) => n.wordsW)) + 12);
-  const narrow = house[0] - RING - tail < LANE_MIN;
+  // the words may be as wide as a two-line battery; reserve that much rather than measuring today's
+  // figures, so a card does not swing between the diagram and the list as the numbers grow
+  const reserved = up4(TEXT + WORDS_RESERVE + 12);
+  const narrow = house[0] - RING - reserved < LANE_MIN;
   const lanes: RowLane[] = [];
   const out: Cubic[] = [];
   const cys = consumers.map((_, i, all) =>
