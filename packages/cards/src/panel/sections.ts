@@ -76,6 +76,8 @@ import {
 } from '@fluvy/tokens/runtime';
 import { html, nothing, svg, type TemplateResult } from 'lit';
 import { defaultColumns, fittedColumns } from '../shared/chips.js';
+import { glyphForClass } from '../shared/domain.js';
+import { HomeRegistry } from '../strategy/home-registry.js';
 import {
   optionalViews,
   TEMPLATES,
@@ -1395,27 +1397,106 @@ function capsChoice(ctx: PanelContext, urlPath: string, current: unknown): Templ
   );
 }
 
-/** Home Assistant's entity picker, as many as chosen: what a dashboard leaves out (Home Assistant's own element). */
+/** Home Assistant's entity picker: the entries no list above can name (a pattern, a device, a domain). */
 const ENTITIES = { entity: { multiple: true } } as const;
 
+/** The entries of a dashboard's `exclude` as written: ids, patterns, devices, domains. */
+const excludedWords = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === 'string' && entry !== '')
+    : [];
+
+/** An entity's domain, as the glyphs are chosen by (`light.kitchen` → `light`). */
+const entityDomain = (id: string): string => id.slice(0, Math.max(0, id.indexOf('.')));
+
 /**
- * What a dashboard leaves out of every view (`exclude`, #141), in Home Assistant's entity picker; an entry the raw
- * configuration writes otherwise (a pattern, a device, a domain) stays as written. None chosen takes the key away.
+ * What a dashboard leaves out of every view (`exclude`, #141), in three parts:
+ *
+ * - what is left out already, a chip each: a tap takes one back — a pattern, a device or a domain it cannot be asked
+ *   for any other way;
+ * - the entities this dashboard is using, a room's page's worth at a time, a switch each: a tap leaves one out, as if
+ *   the house had none of it. The house is read as the dashboard reads it (`HomeRegistry`, the room card's own rule),
+ *   so a house of many entities is asked room by room, not all at once;
+ * - Home Assistant's own picker for the entries no list can name.
+ *
+ * None chosen takes the key away.
  */
 function entitiesChoice(ctx: PanelContext, urlPath: string, current: unknown): TemplateResult {
-  const words = (value: unknown): string[] =>
-    Array.isArray(value)
-      ? value.filter((entry): entry is string => typeof entry === 'string' && entry !== '')
-      : [];
+  const left = excludedWords(current);
+  const write = (next: readonly string[]): void =>
+    ctx.editStrategy(urlPath, { exclude: next.length ? [...next] : undefined });
+  const takeBack = (entry: string): void => write(left.filter((other) => other !== entry));
+  const leave = (id: string, out: boolean): void =>
+    write(out ? [...left, id] : left.filter((other) => other !== id));
+
+  // the house as this dashboard draws it: what a room's page reaches, less what is left out already
+  const registry = new HomeRegistry(ctx.hass, {}, left);
+  const nameOf = (id: string): string =>
+    String(ctx.hass.states[id]?.attributes?.friendly_name ?? id);
+  const row = (id: string): TemplateResult =>
+    listRow({
+      icon: glyphForClass(
+        entityDomain(id),
+        String(ctx.hass.states[id]?.attributes?.device_class ?? ''),
+      ),
+      title: nameOf(id),
+      sub: id,
+      trailing: 'switch',
+      on: !left.includes(id),
+      readonly: !ctx.admin,
+      onToggle: (on) => leave(id, !on),
+    });
+  const groups = registry.areas
+    .map((area) => ({
+      name: registry.areaName(area.area_id) ?? '',
+      ids: registry.contents(area.area_id).entities.filter((id) => registry.usable(id)),
+    }))
+    .filter((group) => group.name !== '' && group.ids.length > 0);
+  const inRooms = new Set(groups.flatMap((group) => [...group.ids]));
+  const loose = Object.keys(ctx.hass.states)
+    .filter((id) => !inRooms.has(id) && registry.usable(id) && !areaOf(ctx.hass, id))
+    .sort();
+  /** A chip's name: an entity's own, else the entry as written (a pattern, a device, a domain). */
+  const label = (entry: string): string => (ctx.hass.states[entry] ? nameOf(entry) : entry);
+
   return html`<p class="pn-hint">${ctx.t('dashboard.exclude_sub')}</p>
+    ${
+      left.length
+        ? choice(
+            ctx,
+            left.map((entry) => ({ key: entry, label: label(entry), active: true })),
+            ctx.admin ? takeBack : null,
+          )
+        : html`<p class="pn-note">${ctx.t('dashboard.exclude_none')}</p>`
+    }
+    ${
+      ![...groups, { name: ctx.t('dashboard.exclude_loose'), ids: loose }].some(
+        (group) => group.ids.length > 0,
+      )
+        ? nothing
+        : html`<p class="pn-label">${ctx.t('dashboard.exclude_in_use')}</p>
+            <div class="pn-rows" style="max-block-size: 480px; overflow-y: auto">
+              ${groups.map(
+                (group) =>
+                  html`<p class="pn-note">${group.name}</p>
+                    ${group.ids.map((id) => row(id))}`,
+              )}
+              ${
+                loose.length
+                  ? html`<p class="pn-note">${ctx.t('dashboard.exclude_loose')}</p>
+                      ${loose.map((id) => row(id))}`
+                  : nothing
+              }
+            </div>`
+    }
+    <p class="pn-label">${ctx.t('dashboard.exclude_add')}</p>
     <ha-selector
       .hass=${ctx.hass}
       .selector=${ENTITIES}
-      .value=${words(current)}
+      .value=${left}
       .disabled=${!ctx.admin}
       @value-changed=${(event: CustomEvent<{ value?: unknown }>) => {
-        const chosen = words(event.detail.value);
-        ctx.editStrategy(urlPath, { exclude: chosen.length ? chosen : undefined });
+        write(excludedWords(event.detail.value));
       }}
     ></ha-selector>`;
 }
