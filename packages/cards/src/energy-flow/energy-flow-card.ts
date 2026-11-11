@@ -248,6 +248,24 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         overflow: hidden;
         text-overflow: ellipsis;
       }
+      /* a row of the narrow card: its words at the row's end, the label with the width they leave */
+      .en-list__label {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--fluvy-text);
+      }
+      .en-list__stat {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        max-inline-size: 62%;
+      }
     `,
   ];
 
@@ -1226,6 +1244,11 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
           : false),
     );
     const room = bare ? w : w - TEXT;
+    // the figures sit at the row's end: the label has the rest of the width to itself
+    const line = (value: string, unit: string, way: string): TemplateResult =>
+      html`<span class="en-words__value"
+        >${value}${unit || way ? html`<span class="en-words__unit">${unit}${way ? ` ${way}` : ''}</span>` : nothing}</span
+      >`;
     const row = (
       glyph: string,
       tone: Tone,
@@ -1234,11 +1257,6 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       tap: (() => void) | undefined,
       label: string,
     ): TemplateResult => {
-      const wraps =
-        this.lineWidth(words.value, words.unit, words.way) > room ||
-        (words.second
-          ? this.lineWidth(words.second.value, words.second.unit, words.second.way) > room
-          : false);
       // "Battery · 62 %" keeps "Battery" in a narrow column: the segments after the first go before anything is cut
       const fitted = fitLine(
         words.label.split(' · ').map((text, index) => ({ text, optional: index > 0 })),
@@ -1249,7 +1267,13 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         class="en-list__row ${bare ? 'is-bare' : ''}"
         data-accent=${accent ?? nothing}
       >
-        ${bare ? nothing : ico(glyph, tone, { onTap: tap, label })}${renderWords({ ...words, label: fitted }, 'left', wraps)}
+        ${bare ? nothing : ico(glyph, tone, { onTap: tap, label })}
+        <span class="en-list__label" title=${label}>${fitted}</span>
+        <span class="en-list__stat ${words.dim ? 'is-dim' : ''}"
+          >${line(words.value, words.unit, words.way)}${words.second
+            ? line(words.second.value, words.second.unit, words.second.way)
+            : nothing}</span
+        >
       </div>`;
     };
     return html`<div class="en-list">
