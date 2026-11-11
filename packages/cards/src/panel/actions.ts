@@ -93,7 +93,7 @@ export function copyEditable(panel: FluvyPanel, ctx: PanelContext, urlPath: stri
         url_path: target,
         title: `${dashboard.title} · ${ctx.t('dashboard.copy_suffix')}`,
         icon: dashboard.icon ?? template.icon,
-        show_in_sidebar: false,
+        show_in_sidebar: true,
         require_admin: false,
         mode: 'storage',
       });
@@ -104,7 +104,8 @@ export function copyEditable(panel: FluvyPanel, ctx: PanelContext, urlPath: stri
       config: { views },
     });
     await panel.loadDashboards();
-    navigate(`/${target}`);
+    // straight into Home Assistant's own editor: the copy is a plain dashboard, and saving it is the whole job
+    navigate(`/${target}?edit=1`);
   }, 'dashboard.copied');
 }
 

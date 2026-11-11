@@ -149,7 +149,7 @@
     "dashboard.compact": "Compact",
     "dashboard.copied": "Copy made",
     "dashboard.copy_editable": "Make an editable copy",
-    "dashboard.copy_editable_sub": "A plain dashboard with every card this one draws now — add, remove, reorder and restyle it freely in Home Assistant's editor. The automatic dashboard stays as it is; the copy is a snapshot.",
+    "dashboard.copy_editable_sub": "Copies what this dashboard draws into a plain dashboard in the sidebar, then opens it in Home Assistant's editor: change it and save.",
     "dashboard.copy_suffix": "editable",
     "dashboard.count": "{count}",
     "dashboard.create": "Create",

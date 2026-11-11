@@ -2376,7 +2376,7 @@
     "dashboard.compact": "紧凑",
     "dashboard.copied": "已复制",
     "dashboard.copy_editable": "复制成可编辑仪表盘",
-    "dashboard.copy_editable_sub": "把现在的这一版内容复制成一个普通仪表盘，可在 Home Assistant 编辑器里自由增删卡片、调整顺序和样式。自动仪表盘保持不变；副本是那一刻的快照。",
+    "dashboard.copy_editable_sub": "把这一版内容复制成一个普通仪表盘（会出现在侧栏），并直接在 Home Assistant 编辑器里打开：改完保存即可。",
     "dashboard.copy_suffix": "可编辑",
     "dashboard.count": "{count}",
     "dashboard.create": "创建",

@@ -59,7 +59,6 @@ import {
   roomFor,
 } from './palettes.js';
 import type { SelectChangeDetail, SelectOption } from '@fluvy/ui/select';
-import { editRows } from './edit-rows.js';
 import {
   CUSTOM_BASES,
   type CustomPalette,
@@ -1588,7 +1587,6 @@ function dashboardOptions(
                 : optionChoice(ctx, dashboard.urlPath, option, strategy[option.key])
         }`;
     })}
-    ${ctx.admin ? editRows(ctx, dashboard, strategy) : nothing}
     ${
       ctx.admin
         ? html`<div class="pn-rows">
