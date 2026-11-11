@@ -1429,8 +1429,9 @@ function entitiesChoice(ctx: PanelContext, urlPath: string, current: unknown): T
   const leave = (id: string, out: boolean): void =>
     write(out ? [...left, id] : left.filter((other) => other !== id));
 
-  // the house as this dashboard draws it: what a room's page reaches, less what is left out already
-  const registry = new HomeRegistry(ctx.hass, {}, left);
+  // the house as this dashboard draws it, exclusions and all: a row stays once it is excluded, so the switch that left
+  // it out can be found again here rather than only among the chips
+  const registry = new HomeRegistry(ctx.hass, {});
   const nameOf = (id: string): string =>
     String(ctx.hass.states[id]?.attributes?.friendly_name ?? id);
   const row = (id: string): TemplateResult =>
@@ -1442,9 +1443,9 @@ function entitiesChoice(ctx: PanelContext, urlPath: string, current: unknown): T
       title: nameOf(id),
       sub: id,
       trailing: 'switch',
-      on: !left.includes(id),
+      on: left.includes(id),
       readonly: !ctx.admin,
-      onToggle: (on) => leave(id, !on),
+      onToggle: (on) => leave(id, on),
     });
   const groups = registry.areas
     .map((area) => ({
