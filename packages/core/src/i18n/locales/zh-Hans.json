@@ -2644,7 +2644,7 @@
     "dashboard.apply_copy_sub": "你在可编辑副本里做的改动会变成这个自动仪表盘的规则：去掉的卡片不显示、排好的顺序保留、卡片里增减的实体照你改的来；以后新增的设备仍会自动出现。",
     "dashboard.apply_copy_btn": "应用",
     "dashboard.apply_ready": "应用后：隐藏 {n} 张卡、修改 {e} 张卡的实体、调整 {o} 张卡的顺序",
-    "dashboard.apply_skip": "副本里有 {n} 张卡在自动仪表盘中找不到对应位置，会被忽略",
+    "dashboard.apply_skip": "副本里有 {n} 处内容在自动仪表盘中找不到对应位置，会被忽略",
     "dashboard.apply_apply_sub": "应用之后副本会删除。",
     "dashboard.apply_confirm": "写入自动仪表盘",
     "dashboard.apply_confirm_btn": "应用",
