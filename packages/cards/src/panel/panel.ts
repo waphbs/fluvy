@@ -84,7 +84,9 @@ import type { SeriesDraft } from './series.js';
 import {
   aboutFacts,
   applyCopy,
+  cancelCopy,
   copyEditable,
+  previewCopy,
   createDashboard,
   exportPalette,
   importPalette,
@@ -185,6 +187,9 @@ export class FluvyPanel extends LitElement {
 
   /** The cards each automatic dashboard draws now, generated when a person opens its rows to change them. */
   private readonly previews = new Map<string, View[]>();
+
+  /** The difference a copy would bring, kept while the row asks before writing it. */
+  readonly copyPreviews = new Map<string, import('./actions.js').CopyPreview>();
   declare notice: string;
   declare resetArmed: boolean;
   /** The url path of the dashboard whose Recreate row is armed ('' when none). */
@@ -921,7 +926,10 @@ export class FluvyPanel extends LitElement {
           create: (template) => createDashboard(this, ctx, template),
           recreate: (urlPath) => recreateDashboard(this, ctx, urlPath),
           copyEditable: (urlPath) => copyEditable(this, ctx, urlPath),
+          previewCopy: (urlPath) => previewCopy(this, ctx, urlPath),
           applyCopy: (urlPath) => applyCopy(this, ctx, urlPath),
+          cancelCopy: (urlPath) => cancelCopy(this, urlPath),
+          copyPreviewOf: (urlPath) => this.copyPreviews.get(urlPath),
           hasCopy: (urlPath) => this.dashboards.some((d) => d.urlPath === `${urlPath}-custom`),
           open: (urlPath) => navigate(`/${urlPath}`),
           showInSidebar: (urlPath, on) => showInSidebar(this, ctx, urlPath, on),

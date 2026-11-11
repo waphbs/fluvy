@@ -415,6 +415,15 @@
     "dashboard.edit_area": "Room",
     "dashboard.apply_copy": "Take the copy back",
     "dashboard.apply_copy_sub": "The changes you made in the editable copy become rules of this automatic dashboard: cards stay out, keep their place, and hold the entities you chose. New devices still arrive.",
-    "dashboard.apply_copy_btn": "Apply"
+    "dashboard.apply_copy_btn": "Apply",
+    "dashboard.apply_ready": "Taking the copy back hides {n} cards, changes the entities of {e}, and moves {o}",
+    "dashboard.apply_skip": "{n} cards of the copy have no place in the automatic dashboard and are left behind",
+    "dashboard.apply_apply_sub": "The copy goes away once it is applied.",
+    "dashboard.apply_confirm": "Write it into the automatic dashboard",
+    "dashboard.apply_confirm_btn": "Apply",
+    "dashboard.apply_cancel": "Leave it for now",
+    "dashboard.apply_cancel_btn": "Cancel",
+    "dashboard.copy_check": "Compared the copy with the dashboard",
+    "dashboard.applied": "Applied; the copy is gone"
   }
 }

@@ -1,6 +1,7 @@
 /** The fluvy panel's actions beyond the look: the automatic dashboards, the settings file, the reset, the facts. */
 import { HOUSE_DEFAULTS, navigate, PALETTE_SERIES, parseHouse, parsePersonal } from '@fluvy/core';
 import { HOME_TEMPLATE, strategyOptions, type Template } from '../strategy/templates.js';
+import type { DashboardEdit } from '../strategy/edit.js';
 import type { FluvyStrategyConfig, View } from '../strategy/types.js';
 import { paletteFileName, parsePaletteFile, type PaletteFile } from '@fluvy/tokens/runtime';
 import type { PanelContext } from './model.js';
@@ -109,13 +110,17 @@ export function copyEditable(panel: FluvyPanel, ctx: PanelContext, urlPath: stri
   }, 'dashboard.copied');
 }
 
-/**
- * The other way round: what a person changed in the copy becomes the difference the automatic dashboard carries. The
- * copy is read as a plain dashboard (its cards, their order, their entities), compared with what the dashboard draws
- * now, and only the difference is written: cards left out are left out, moved cards keep their place, a card's
- * entities are recorded. Devices that arrive later still show up, and the copy stays as it was.
- */
-export function applyCopy(panel: FluvyPanel, ctx: PanelContext, urlPath: string): void {
+/** What taking a copy back would change, counted for the row that asks first. */
+export interface CopyPreview {
+  readonly edit: DashboardEdit;
+  readonly hidden: number;
+  readonly entities: number;
+  readonly order: number;
+  readonly notes: number;
+}
+
+/** Compares the copy with what the dashboard draws now and keeps the difference until the tap confirms it. */
+export function previewCopy(panel: FluvyPanel, ctx: PanelContext, urlPath: string): void {
   const dashboard = panel.dashboards.find((entry) => entry.urlPath === urlPath);
   const template = dashboard?.template;
   const strategy = dashboard?.strategy;
@@ -130,19 +135,48 @@ export function applyCopy(panel: FluvyPanel, ctx: PanelContext, urlPath: string)
       generateWith(template, strategy as unknown as FluvyStrategyConfig, ctx.hass, `/${urlPath}`),
     ]);
     const { edit, notes } = editFromCopy(copy.views ?? [], drawn.views);
+    const cards = edit.cards ?? {};
+    panel.copyPreviews.set(urlPath, {
+      edit,
+      hidden: Object.values(cards).filter((card) => card.hidden).length,
+      entities: Object.keys(edit.entities ?? {}).length,
+      order: Object.values(cards).filter((card) => card.order !== undefined).length,
+      notes: notes.length,
+    });
+    panel.requestUpdate();
+  }, 'dashboard.copy_check');
+}
+
+/** Puts the copy's difference into the automatic dashboard, then takes the copy away: it has done its job. */
+export function applyCopy(panel: FluvyPanel, ctx: PanelContext, urlPath: string): void {
+  const dashboard = panel.dashboards.find((entry) => entry.urlPath === urlPath);
+  const strategy = dashboard?.strategy;
+  const target = `${urlPath}-custom`;
+  const preview = panel.copyPreviews.get(urlPath);
+  const copy = panel.dashboards.find((entry) => entry.urlPath === target);
+  if (!dashboard || !strategy || !preview || !copy) return;
+  panel.run(async () => {
     await ctx.hass.callWS({
       type: 'lovelace/config/save',
       url_path: urlPath,
       config: {
         strategy: {
           ...(strategy as unknown as Record<string, unknown>),
-          ...(Object.keys(edit).length ? { edit } : { edit: undefined }),
+          ...(Object.keys(preview.edit).length ? { edit: preview.edit } : { edit: undefined }),
         },
       },
     });
+    await ctx.hass.callWS({ type: 'lovelace/dashboards/delete', dashboard_id: copy.id });
+    panel.copyPreviews.delete(urlPath);
     await panel.loadDashboards();
-    if (notes.length) console.info('fluvy: the copy holds what the automatic dashboard cannot take', notes);
-  }, 'dashboard.copied');
+    panel.requestUpdate();
+  }, 'dashboard.applied');
+}
+
+/** Leaves the copy alone and forgets the difference. */
+export function cancelCopy(panel: FluvyPanel, urlPath: string): void {
+  panel.copyPreviews.delete(urlPath);
+  panel.requestUpdate();
 }
 
 /** Lists a dashboard in Home Assistant's sidebar, or takes its entry out (the dashboard stays). */

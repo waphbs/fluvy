@@ -76,8 +76,6 @@ import {
 } from '@fluvy/tokens/runtime';
 import { html, nothing, svg, type TemplateResult } from 'lit';
 import { defaultColumns, fittedColumns } from '../shared/chips.js';
-import { glyphForClass } from '../shared/domain.js';
-import { HomeRegistry } from '../strategy/home-registry.js';
 import {
   optionalViews,
   TEMPLATES,
@@ -103,6 +101,7 @@ import {
   type StringKey,
   TRANSLATING_URL,
 } from './model.js';
+import type { CopyPreview } from './actions.js';
 import { copyText } from './clipboard.js';
 
 /** One rhythm for every choice inside a card: 8 between cells on a phone, 12 on a wide panel. */
@@ -1397,128 +1396,19 @@ function capsChoice(ctx: PanelContext, urlPath: string, current: unknown): Templ
   );
 }
 
-/** Home Assistant's entity picker: the entries no list above can name (a pattern, a device, a domain). */
-const ENTITIES = { entity: { multiple: true } } as const;
-
-/** The entries of a dashboard's `exclude` as written: ids, patterns, devices, domains. */
-const excludedWords = (value: unknown): string[] =>
-  Array.isArray(value)
-    ? value.filter((entry): entry is string => typeof entry === 'string' && entry !== '')
-    : [];
-
-/** An entity's domain, as the glyphs are chosen by (`light.kitchen` → `light`). */
-const entityDomain = (id: string): string => id.slice(0, Math.max(0, id.indexOf('.')));
-
-/**
- * What a dashboard leaves out of every view (`exclude`, #141), in three parts:
- *
- * - what is left out already, a chip each: a tap takes one back — a pattern, a device or a domain it cannot be asked
- *   for any other way;
- * - the entities this dashboard is using, a room's page's worth at a time, a switch each: a tap leaves one out, as if
- *   the house had none of it. The house is read as the dashboard reads it (`HomeRegistry`, the room card's own rule),
- *   so a house of many entities is asked room by room, not all at once;
- * - Home Assistant's own picker for the entries no list can name.
- *
- * None chosen takes the key away.
- */
-function entitiesChoice(ctx: PanelContext, urlPath: string, current: unknown): TemplateResult {
-  const left = excludedWords(current);
-  const write = (next: readonly string[]): void =>
-    ctx.editStrategy(urlPath, { exclude: next.length ? [...next] : undefined });
-  const takeBack = (entry: string): void => write(left.filter((other) => other !== entry));
-  const leave = (id: string, out: boolean): void =>
-    write(out ? [...left, id] : left.filter((other) => other !== id));
-
-  // the house as this dashboard draws it, exclusions and all: a row stays once it is excluded, so the switch that left
-  // it out can be found again here rather than only among the chips
-  const registry = new HomeRegistry(ctx.hass, {});
-  const nameOf = (id: string): string =>
-    String(ctx.hass.states[id]?.attributes?.friendly_name ?? id);
-  const row = (id: string): TemplateResult =>
-    listRow({
-      icon: glyphForClass(
-        entityDomain(id),
-        String(ctx.hass.states[id]?.attributes?.device_class ?? ''),
-      ),
-      title: nameOf(id),
-      sub: id,
-      trailing: 'switch',
-      on: left.includes(id),
-      readonly: !ctx.admin,
-      onToggle: (on) => leave(id, on),
-    });
-  const groups = registry.areas
-    .map((area) => ({
-      name: registry.areaName(area.area_id) ?? '',
-      ids: registry.contents(area.area_id).entities.filter((id) => registry.usable(id)),
-    }))
-    .filter((group) => group.name !== '' && group.ids.length > 0);
-  const inRooms = new Set(groups.flatMap((group) => [...group.ids]));
-  const loose = Object.keys(ctx.hass.states)
-    .filter((id) => !inRooms.has(id) && registry.usable(id) && !areaOf(ctx.hass, id))
-    .sort();
-  /** A chip's name: an entity's own, else the entry as written (a pattern, a device, a domain). */
-  const label = (entry: string): string => (ctx.hass.states[entry] ? nameOf(entry) : entry);
-
-  /** Home Assistant's own picker: the entries no list above can name (a pattern, a device, a domain). */
-  const picker = (): TemplateResult => html`<p class="pn-label">${ctx.t('dashboard.exclude_add')}</p>
-    <ha-selector
-      .hass=${ctx.hass}
-      .selector=${ENTITIES}
-      .value=${left}
-      .disabled=${!ctx.admin}
-      @value-changed=${(event: CustomEvent<{ value?: unknown }>) => {
-        write(excludedWords(event.detail.value));
-      }}
-    ></ha-selector>`;
-
-  // What is left out already folds away: a dashboard of a whole house leaves many out, and a list of them above the
-  // switches would push the switches themselves out of sight. The picker folds with it, its own list of what is chosen
-  // being just as long; a dashboard that leaves nothing out shows it open, which is the one case a tap is needed.
-  const folded = (entries: readonly string[]): TemplateResult => html`<details class="pn-fold">
-    <summary class="pn-note">${ctx.t('dashboard.exclude_show', { n: String(entries.length) })}</summary>
-    <div class="pn-rows pn-scroll" style="max-block-size: 180px">
-      ${choice(
-        ctx,
-        entries.map((entry) => ({ key: entry, label: label(entry), active: true })),
-        ctx.admin ? takeBack : null,
-      )}
-    </div>
-    ${picker()}
-  </details>`;
-
-  return html`<p class="pn-hint">${ctx.t('dashboard.exclude_sub')}</p>
-    ${left.length ? folded(left) : html`<p class="pn-note">${ctx.t('dashboard.exclude_none')}</p>${picker()}`}
-    ${
-      ![...groups, { name: ctx.t('dashboard.exclude_loose'), ids: loose }].some(
-        (group) => group.ids.length > 0,
-      )
-        ? nothing
-        : html`<p class="pn-label">${ctx.t('dashboard.exclude_in_use')}</p>
-            <div class="pn-rows pn-scroll" style="max-block-size: 380px">
-              ${groups.map(
-                (group) =>
-                  html`<p class="pn-note">${group.name}</p>
-                    ${group.ids.map((id) => row(id))}`,
-              )}
-              ${
-                loose.length
-                  ? html`<p class="pn-note">${ctx.t('dashboard.exclude_loose')}</p>
-                      ${loose.map((id) => row(id))}`
-                  : nothing
-              }
-            </div>`
-    }
-  `;
-}
-
 export interface DashboardActions {
   create(template: Template): void;
   recreate(urlPath: string): void;
   /** Copies what this dashboard draws now into a plain dashboard Home Assistant's own editor edits freely. */
   copyEditable(urlPath: string): void;
+  /** Compares the copy with what the dashboard draws now, and keeps the difference for the row to show. */
+  previewCopy(urlPath: string): void;
   /** Takes what a person changed in that copy and writes the difference into the automatic dashboard. */
   applyCopy(urlPath: string): void;
+  /** Forgets the difference and leaves the copy as it is. */
+  cancelCopy(urlPath: string): void;
+  /** The difference a copy would bring, while its row asks first. */
+  copyPreviewOf(urlPath: string): CopyPreview | undefined;
   /** Whether a copy of this dashboard exists (the row to take its changes back is shown only then). */
   hasCopy(urlPath: string): boolean;
   open(urlPath: string): void;
@@ -1540,6 +1430,7 @@ function dashboardOptions(
   const strategy = ctx.strategyOf(dashboard.urlPath) ?? {};
   const hidden = new Set(Array.isArray(strategy['hide']) ? (strategy['hide'] as string[]) : []);
   const armed = actions.recreateArmed === dashboard.urlPath;
+  const preview = actions.copyPreviewOf(dashboard.urlPath);
   const [first] = typeof template.views === 'function' ? [] : template.views;
   return html`<section class="fv-card pn-card ${armed ? 'is-armed' : ''}">
     ${head({
@@ -1548,6 +1439,8 @@ function dashboardOptions(
       ...(ctx.admin ? {} : { sub: ctx.t('scope.admin_only') }),
     })}
     ${template.options.map((option) => {
+      // leaving entities out is done in the copy and taken back from there: a second picker only invites mistakes
+      if (option.kind === 'entities') return nothing;
       // a house without areas has no rooms to choose from
       if (option.kind === 'areas' && !Object.keys(ctx.hass.areas ?? {}).length) return nothing;
       if (option.kind === 'views')
@@ -1586,9 +1479,7 @@ function dashboardOptions(
             ? areasChoice(ctx, dashboard.urlPath, strategy['areas'])
             : option.kind === 'caps'
               ? capsChoice(ctx, dashboard.urlPath, strategy['caps'])
-              : option.kind === 'entities'
-                ? entitiesChoice(ctx, dashboard.urlPath, strategy['exclude'])
-                : optionChoice(ctx, dashboard.urlPath, option, strategy[option.key])
+              : optionChoice(ctx, dashboard.urlPath, option, strategy[option.key])
         }`;
     })}
     ${
@@ -1613,16 +1504,45 @@ function dashboardOptions(
               onTap: () => actions.copyEditable(dashboard.urlPath),
             })}
             ${
-              actions.hasCopy(dashboard.urlPath)
-                ? listRow({
+              preview
+                ? html`${listRow({
                     icon: 'sliders',
-                    title: ctx.t('dashboard.apply_copy'),
-                    sub: ctx.t('dashboard.apply_copy_sub'),
-                    trailing: 'button',
-                    button: ctx.t('dashboard.apply_copy_btn'),
-                    onTap: () => actions.applyCopy(dashboard.urlPath),
-                  })
-                : nothing
+                    title: ctx.t('dashboard.apply_ready', {
+                      n: String(preview.hidden),
+                      e: String(preview.entities),
+                      o: String(preview.order),
+                    }),
+                    sub: preview.notes
+                      ? ctx.t('dashboard.apply_skip', { n: String(preview.notes) })
+                      : ctx.t('dashboard.apply_apply_sub'),
+                    trailing: 'none',
+                  })}
+                  <div class="pn-rows pn-edit-sub">
+                    ${listRow({
+                      icon: 'check',
+                      title: ctx.t('dashboard.apply_confirm'),
+                      trailing: 'button',
+                      button: ctx.t('dashboard.apply_confirm_btn'),
+                      onTap: () => actions.applyCopy(dashboard.urlPath),
+                    })}
+                    ${listRow({
+                      icon: 'close',
+                      title: ctx.t('dashboard.apply_cancel'),
+                      trailing: 'button',
+                      button: ctx.t('dashboard.apply_cancel_btn'),
+                      onTap: () => actions.cancelCopy(dashboard.urlPath),
+                    })}
+                  </div>`
+                : actions.hasCopy(dashboard.urlPath)
+                  ? listRow({
+                      icon: 'sliders',
+                      title: ctx.t('dashboard.apply_copy'),
+                      sub: ctx.t('dashboard.apply_copy_sub'),
+                      trailing: 'button',
+                      button: ctx.t('dashboard.apply_copy_btn'),
+                      onTap: () => actions.previewCopy(dashboard.urlPath),
+                    })
+                  : nothing
             }
             ${listRow({
               icon: 'auto',
