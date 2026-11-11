@@ -2639,7 +2639,10 @@
     "dashboard.edit_cards": "{n} 张卡片",
     "dashboard.edit_up": "上移",
     "dashboard.edit_down": "下移",
-    "dashboard.edit_area": "区域"
+    "dashboard.edit_area": "区域",
+    "dashboard.apply_copy": "把副本的改动应用回来",
+    "dashboard.apply_copy_sub": "你在可编辑副本里做的改动会变成这个自动仪表盘的规则：去掉的卡片不显示、排好的顺序保留、卡片里增减的实体照你改的来；以后新增的设备仍会自动出现。",
+    "dashboard.apply_copy_btn": "应用"
   },
   "room-editor": {
     "show_quick_actions": "显示快捷操作",

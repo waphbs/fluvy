@@ -412,6 +412,9 @@
     "dashboard.edit_cards": "{n} cards",
     "dashboard.edit_up": "Move up",
     "dashboard.edit_down": "Move down",
-    "dashboard.edit_area": "Room"
+    "dashboard.edit_area": "Room",
+    "dashboard.apply_copy": "Take the copy back",
+    "dashboard.apply_copy_sub": "The changes you made in the editable copy become rules of this automatic dashboard: cards stay out, keep their place, and hold the entities you chose. New devices still arrive.",
+    "dashboard.apply_copy_btn": "Apply"
   }
 }

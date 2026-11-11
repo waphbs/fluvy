@@ -83,6 +83,7 @@ import type { SeriesDraft } from './series.js';
 
 import {
   aboutFacts,
+  applyCopy,
   copyEditable,
   createDashboard,
   exportPalette,
@@ -920,6 +921,8 @@ export class FluvyPanel extends LitElement {
           create: (template) => createDashboard(this, ctx, template),
           recreate: (urlPath) => recreateDashboard(this, ctx, urlPath),
           copyEditable: (urlPath) => copyEditable(this, ctx, urlPath),
+          applyCopy: (urlPath) => applyCopy(this, ctx, urlPath),
+          hasCopy: (urlPath) => this.dashboards.some((d) => d.urlPath === `${urlPath}-custom`),
           open: (urlPath) => navigate(`/${urlPath}`),
           showInSidebar: (urlPath, on) => showInSidebar(this, ctx, urlPath, on),
           creating: this.creating,

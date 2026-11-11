@@ -1517,6 +1517,10 @@ export interface DashboardActions {
   recreate(urlPath: string): void;
   /** Copies what this dashboard draws now into a plain dashboard Home Assistant's own editor edits freely. */
   copyEditable(urlPath: string): void;
+  /** Takes what a person changed in that copy and writes the difference into the automatic dashboard. */
+  applyCopy(urlPath: string): void;
+  /** Whether a copy of this dashboard exists (the row to take its changes back is shown only then). */
+  hasCopy(urlPath: string): boolean;
   open(urlPath: string): void;
   /** Lists a dashboard in Home Assistant's sidebar, or not. */
   showInSidebar(urlPath: string, on: boolean): void;
@@ -1608,6 +1612,18 @@ function dashboardOptions(
               trailing: 'chevron',
               onTap: () => actions.copyEditable(dashboard.urlPath),
             })}
+            ${
+              actions.hasCopy(dashboard.urlPath)
+                ? listRow({
+                    icon: 'sliders',
+                    title: ctx.t('dashboard.apply_copy'),
+                    sub: ctx.t('dashboard.apply_copy_sub'),
+                    trailing: 'button',
+                    button: ctx.t('dashboard.apply_copy_btn'),
+                    onTap: () => actions.applyCopy(dashboard.urlPath),
+                  })
+                : nothing
+            }
             ${listRow({
               icon: 'auto',
               tone: armed ? 'warning' : 'neutral',

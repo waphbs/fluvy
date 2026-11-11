@@ -1,7 +1,7 @@
 /** The fluvy panel's actions beyond the look: the automatic dashboards, the settings file, the reset, the facts. */
 import { HOUSE_DEFAULTS, navigate, PALETTE_SERIES, parseHouse, parsePersonal } from '@fluvy/core';
 import { HOME_TEMPLATE, strategyOptions, type Template } from '../strategy/templates.js';
-import type { FluvyStrategyConfig } from '../strategy/types.js';
+import type { FluvyStrategyConfig, View } from '../strategy/types.js';
 import { paletteFileName, parsePaletteFile, type PaletteFile } from '@fluvy/tokens/runtime';
 import type { PanelContext } from './model.js';
 import { withoutPalette, withPalette } from './palettes.js';
@@ -106,6 +106,42 @@ export function copyEditable(panel: FluvyPanel, ctx: PanelContext, urlPath: stri
     await panel.loadDashboards();
     // straight into Home Assistant's own editor: the copy is a plain dashboard, and saving it is the whole job
     navigate(`/${target}?edit=1`);
+  }, 'dashboard.copied');
+}
+
+/**
+ * The other way round: what a person changed in the copy becomes the difference the automatic dashboard carries. The
+ * copy is read as a plain dashboard (its cards, their order, their entities), compared with what the dashboard draws
+ * now, and only the difference is written: cards left out are left out, moved cards keep their place, a card's
+ * entities are recorded. Devices that arrive later still show up, and the copy stays as it was.
+ */
+export function applyCopy(panel: FluvyPanel, ctx: PanelContext, urlPath: string): void {
+  const dashboard = panel.dashboards.find((entry) => entry.urlPath === urlPath);
+  const template = dashboard?.template;
+  const strategy = dashboard?.strategy;
+  const target = `${urlPath}-custom`;
+  if (!dashboard || !template || !strategy || !panel.dashboards.some((entry) => entry.urlPath === target))
+    return;
+  panel.run(async () => {
+    const { generateWith } = await import('../strategy/generate.js');
+    const { editFromCopy } = await import('../strategy/diff.js');
+    const [copy, drawn] = await Promise.all([
+      ctx.hass.callWS<{ views?: View[] }>({ type: 'lovelace/config', url_path: target }),
+      generateWith(template, strategy as unknown as FluvyStrategyConfig, ctx.hass, `/${urlPath}`),
+    ]);
+    const { edit, notes } = editFromCopy(copy.views ?? [], drawn.views);
+    await ctx.hass.callWS({
+      type: 'lovelace/config/save',
+      url_path: urlPath,
+      config: {
+        strategy: {
+          ...(strategy as unknown as Record<string, unknown>),
+          ...(Object.keys(edit).length ? { edit } : { edit: undefined }),
+        },
+      },
+    });
+    await panel.loadDashboards();
+    if (notes.length) console.info('fluvy: the copy holds what the automatic dashboard cannot take', notes);
   }, 'dashboard.copied');
 }
 
