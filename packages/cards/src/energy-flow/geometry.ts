@@ -177,7 +177,7 @@ export const PITCH = FLOW_PITCH;
 export const TEXT = 56; // 44 circle + 12
 export const RING = 34; // the house's ring (28) + 6
 export const LANE_MIN = 56; // a lane shorter than this is no lane: the card becomes its list
-export const WORDS_RESERVE = 120; // the words' room, whatever the figures say today
+export const WORDS_RESERVE = 96; // the words' room, whatever the figures say today
 
 export interface RowNode {
   /** Words' height (16 · 20 · 20) and width, measured by the card. */
@@ -211,6 +211,8 @@ export interface RowsLayout {
   readonly lanes: readonly RowLane[];
   /** From the house out to each consumer. */
   readonly out: readonly Cubic[];
+  /** Where the house's own words start: under the ring, or under the last row when the fan comes below. */
+  readonly houseWordsY: number;
 }
 
 const toDeg = (px: number): number => (px / RING) * (180 / Math.PI);
@@ -222,8 +224,8 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
   const wide = consumers.length > 0;
   const house: Point = [wide ? o.width / 2 : o.width - 28, Math.round((TOP + last) / 2 / 4) * 4];
   const tail = up4(TEXT + Math.max(0, ...o.nodes.map((n) => n.wordsW)) + 12);
-  // the words may be as wide as a two-line battery; reserve that much rather than measuring today's
-  // figures, so a card does not swing between the diagram and the list as the numbers grow
+  // reserve the words' room, measured once: a card that measured today's figures would swing between
+  // the diagram and the list as they grew a digit
   const reserved = up4(TEXT + WORDS_RESERVE + 12);
   const narrow = house[0] - RING - reserved < LANE_MIN;
   const lanes: RowLane[] = [];
@@ -235,6 +237,7 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
     // the slots: a single lane needs 20 px of arc to its neighbour; a pair is two lanes 16 px apart
     const gap = (a: RowNode, b: RowNode): number => 20 + (a.pair ? 8 : 0) + (b.pair ? 8 : 0);
     let need = o.nodes.slice(1).reduce((sum, b, k) => sum + gap(o.nodes[k] ?? b, b), 0);
+    // past 138° the arcs would bunch up: fall back to an even 20 px between contacts
     const share = toDeg(need) > 138;
     if (share) need = 20 * Math.max(0, o.nodes.length - 1);
     // centred on the house's left point, at most 48° of it below (the words hang there), at most 90° above
@@ -274,9 +277,12 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
       });
     }
   }
+  // with four lanes or more the fan reaches below the house by the whole 48°, straight through the words hanging
+  // there: on such a card they go under the last row instead, where nothing crosses them
+  const houseWordsY = o.nodes.length > 3 ? Math.max(house[1] + 36, last + 24) : house[1] + 36;
   const bottoms = [
     last + Math.max(22, (o.nodes[o.nodes.length - 1]?.wordsH ?? 36) / 2),
-    house[1] + 36 + o.houseWordsH,
+    houseWordsY + o.houseWordsH,
     ...cys.map((y, i) => y + Math.max(22, (consumers[i]?.wordsH ?? 36) / 2)),
   ];
   return {
@@ -286,6 +292,7 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
     nodes: ys.map((y): Point => [22, y]),
     consumers: cys.map((y): Point => [o.width - 22, y]),
     tail,
+    houseWordsY,
     lanes,
     out,
   };
