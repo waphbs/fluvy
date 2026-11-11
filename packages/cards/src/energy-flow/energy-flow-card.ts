@@ -1044,7 +1044,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         wide
           ? html`<div
                 class="en-place"
-                style="left:${rows.house[0] - 60}px;top:${rows.house[1] + 36}px;width:120px"
+                style="left:${rows.house[0] - 60}px;top:${rows.houseWordsY}px;width:120px"
               >
                 ${renderWords(scene.house, 'center')}
               </div>
