@@ -103,8 +103,11 @@ export function deviceName(view: EntityView): string {
 export function shortName(view: EntityView): string {
   const name = deviceName(view);
   // an 11/600 uppercase label holds about 11 characters in a 96 px column: "Kitchen speaker" becomes "Speaker", never "KITCHEN SPEA…"
-  const words = name.split(' ');
-  return name.length > 11 && words.length > 1 ? (words[words.length - 1] as string) : name;
+  // a name written without spaces at all (Chinese, Japanese) is not cut: its last "word" would be the whole subject
+  const words = name.split(' ').filter(Boolean);
+  if (words.length < 2) return name;
+  const latin = words.every((word) => /^[\p{Script=Latin}\p{Number}.,%°/-]+$/u.test(word));
+  return latin && name.length > 11 ? (words[words.length - 1] as string) : name;
 }
 
 /** Safe share: 0 when the total is 0 or missing, never NaN and never Infinity. */
