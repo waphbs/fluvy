@@ -59,7 +59,19 @@ ${ROOT} .narrow ha-tab-group::part(scroll-button) { display: none; }
 ${ROOT} ha-tab-group::part(scroll-button-start) { width: 48px; justify-content: flex-start; background: linear-gradient(90deg, var(--app-header-background-color) 60%, transparent); }
 ${ROOT} ha-tab-group::part(scroll-button-end) { width: 48px; justify-content: flex-end; background: linear-gradient(270deg, var(--app-header-background-color) 60%, transparent); }
 ${ROOT} .narrow ha-tab-group::part(tabs) { padding-inline-end: 24px; }
-${ROOT} .narrow ha-tab-group::part(nav) { -webkit-mask-image: ${FADE}; mask-image: ${FADE}; }
+/* The row scrolls under the finger wherever it is too long for the header (a phone with five views, a larger system
+ * font): Home Assistant's own scroller is left to scroll, its chevrons are the mouse's. The fades are always on, 0px
+ * where the row ends (look/tabs.ts writes them). */
+${ROOT} ha-tab-group::part(nav) { overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; -webkit-mask-image: ${FADE}; mask-image: ${FADE}; }
+${ROOT} ha-tab-group::part(nav)::-webkit-scrollbar { display: none; }
+/* A phone's header is narrow: the tabs tighten (8 + 8 around a name) and their row keeps no gap, so five views fit
+ * on a 360 px screen instead of ending under the header's menu; a row that still does not fit scrolls. */
+@media (max-width: 600px) {
+  ${ROOT} ${TAB} { padding-inline: 8px; }
+  ${ROOT}:not([fluvy-tabs="pills"]) ha-tab-group::part(tabs) { gap: 0; }
+}
+/* A 360 px phone: 8 + 8 around five names is still a little too much, 6 + 6 fits under the header's menu. */
+@media (max-width: 400px) { ${ROOT} ${TAB} { padding-inline: 6px; } }
 ${HIDDEN} ha-tab-group { display: none; }
 ${ROOT} .toolbar > ha-menu-button, :host([fluvy-tab-title]) .toolbar > ha-menu-button { order: -1; }
 ${ROOT} .toolbar > .action-items { margin-inline-start: auto; }
