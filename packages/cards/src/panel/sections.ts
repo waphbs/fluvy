@@ -1459,23 +1459,42 @@ function entitiesChoice(ctx: PanelContext, urlPath: string, current: unknown): T
   /** A chip's name: an entity's own, else the entry as written (a pattern, a device, a domain). */
   const label = (entry: string): string => (ctx.hass.states[entry] ? nameOf(entry) : entry);
 
+  /** Home Assistant's own picker: the entries no list above can name (a pattern, a device, a domain). */
+  const picker = (): TemplateResult => html`<p class="pn-label">${ctx.t('dashboard.exclude_add')}</p>
+    <ha-selector
+      .hass=${ctx.hass}
+      .selector=${ENTITIES}
+      .value=${left}
+      .disabled=${!ctx.admin}
+      @value-changed=${(event: CustomEvent<{ value?: unknown }>) => {
+        write(excludedWords(event.detail.value));
+      }}
+    ></ha-selector>`;
+
+  // What is left out already folds away: a dashboard of a whole house leaves many out, and a list of them above the
+  // switches would push the switches themselves out of sight. The picker folds with it, its own list of what is chosen
+  // being just as long; a dashboard that leaves nothing out shows it open, which is the one case a tap is needed.
+  const folded = (entries: readonly string[]): TemplateResult => html`<details class="pn-fold">
+    <summary class="pn-note">${ctx.t('dashboard.exclude_show', { n: String(entries.length) })}</summary>
+    <div class="pn-rows pn-scroll" style="max-block-size: 180px">
+      ${choice(
+        ctx,
+        entries.map((entry) => ({ key: entry, label: label(entry), active: true })),
+        ctx.admin ? takeBack : null,
+      )}
+    </div>
+    ${picker()}
+  </details>`;
+
   return html`<p class="pn-hint">${ctx.t('dashboard.exclude_sub')}</p>
-    ${
-      left.length
-        ? choice(
-            ctx,
-            left.map((entry) => ({ key: entry, label: label(entry), active: true })),
-            ctx.admin ? takeBack : null,
-          )
-        : html`<p class="pn-note">${ctx.t('dashboard.exclude_none')}</p>`
-    }
+    ${left.length ? folded(left) : html`<p class="pn-note">${ctx.t('dashboard.exclude_none')}</p>${picker()}`}
     ${
       ![...groups, { name: ctx.t('dashboard.exclude_loose'), ids: loose }].some(
         (group) => group.ids.length > 0,
       )
         ? nothing
         : html`<p class="pn-label">${ctx.t('dashboard.exclude_in_use')}</p>
-            <div class="pn-rows" style="max-block-size: 480px; overflow-y: auto">
+            <div class="pn-rows pn-scroll" style="max-block-size: 380px">
               ${groups.map(
                 (group) =>
                   html`<p class="pn-note">${group.name}</p>
@@ -1489,16 +1508,7 @@ function entitiesChoice(ctx: PanelContext, urlPath: string, current: unknown): T
               }
             </div>`
     }
-    <p class="pn-label">${ctx.t('dashboard.exclude_add')}</p>
-    <ha-selector
-      .hass=${ctx.hass}
-      .selector=${ENTITIES}
-      .value=${left}
-      .disabled=${!ctx.admin}
-      @value-changed=${(event: CustomEvent<{ value?: unknown }>) => {
-        write(excludedWords(event.detail.value));
-      }}
-    ></ha-selector>`;
+  `;
 }
 
 export interface DashboardActions {

@@ -393,6 +393,7 @@
     "charts.deleted": "Set deleted",
     "charts.light": "Light",
     "charts.dark": "Dark",
-    "charts.preview_sub": "Your charts with these settings"
+    "charts.preview_sub": "Your charts with these settings",
+    "dashboard.exclude_show": "Excluded: {n} — tap to see or undo"
   }
 }

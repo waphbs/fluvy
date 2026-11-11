@@ -2620,7 +2620,8 @@
     "charts.deleted": "颜色组已删除",
     "charts.light": "浅色",
     "charts.dark": "深色",
-    "charts.preview_sub": "应用这些设置后的图表"
+    "charts.preview_sub": "应用这些设置后的图表",
+    "dashboard.exclude_show": "已排除 {n} 项 — 点击查看或撤销"
   },
   "room-editor": {
     "show_quick_actions": "显示快捷操作",

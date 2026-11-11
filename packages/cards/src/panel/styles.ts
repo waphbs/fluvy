@@ -423,6 +423,21 @@ export const panelStyles = css`
     display: flex;
     flex-direction: column;
   }
+  /* a list long enough to scroll stops inside its own box, so the rows below it keep their place */
+  .pn-scroll {
+    overflow-y: auto;
+    padding-inline-end: 4px;
+    overscroll-behavior: contain;
+  }
+  /* what is left out already, folded: its count is the row, a tap opens the chips */
+  .pn-fold > summary {
+    cursor: pointer;
+    align-self: start;
+    padding-block: 2px;
+  }
+  .pn-fold[open] > summary {
+    margin-block-end: 6px;
+  }
   /* the dashboards' view tabs as a header shows them: the header's colour and hairline, its 56 line, the name at
      its weight; the tabs at their real size (a row longer than the card fades out at its end, as on a phone) */
   .pn-tabsmock {
