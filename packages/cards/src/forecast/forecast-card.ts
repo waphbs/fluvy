@@ -50,7 +50,7 @@ const sum = (list: readonly number[]): number => list.reduce((total, value) => t
  */
 export class FluvyForecastCard extends Card<ForecastCardConfig> {
   static override layoutHeight(): number {
-    return 176;
+    return 232;
   }
 
   static override styles: CSSResultGroup = [
@@ -82,6 +82,38 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
         font-size: 12px;
         color: var(--fluvy-text-secondary);
         font-variant-numeric: tabular-nums;
+      }
+      /* the same three facts the production card shows under today's bars */
+      .fc-stats {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-variant-numeric: tabular-nums;
+      }
+      .fc-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+      .fc-stat + .fc-stat {
+        align-items: flex-end;
+      }
+      .fc-stat__label {
+        font-size: 11px;
+        color: var(--fluvy-text-secondary);
+        white-space: nowrap;
+      }
+      .fc-stat__value {
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      .fc-stat__unit {
+        margin-inline-start: 3px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--fluvy-text-secondary);
       }
       .fc-plot {
         display: grid;
@@ -227,6 +259,8 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
     const peak = tomorrow?.hours ? Math.max(...tomorrow.hours) : null;
     const peakHour =
       tomorrow?.hours && peak !== null && peak > 0 ? tomorrow.hours.indexOf(peak) : null;
+    // the hours the sun is expected to reach the panels: the same fact the production card calls sun hours
+    const sunHours = tomorrow?.hours ? tomorrow.hours.filter((value) => value > 0.05).length : null;
     const ceiling = Math.max(peak ?? 0, 0);
     // the line reads the hour a pointer is on, or the day's total when it is elsewhere
     const hour = this.hoveredHour !== null && tomorrow?.hours ? this.hoveredHour : null;
@@ -239,14 +273,28 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
             <span class="fc-unit">kWh</span>
             ${hour !== null
               ? html`<span class="fc-peak">${String(hour).padStart(2, '0')}:00 – ${String(hour + 1).padStart(2, '0')}:00</span>`
-              : peak !== null && peakHour !== null
-                ? html`<span class="fc-peak"
-                    >${this.t('forecast.peak')} ${figure(peak)} kW · ${String(peakHour).padStart(2, '0')}:00</span
-                  >`
-                : nothing}
+              : nothing}
           </div>
           ${this.plot(tomorrow.hours, ceiling)}
           <div class="fc-axis"><span>00:00</span><span>12:00</span><span>24:00</span></div>
+          <div class="fc-stats">
+            <div class="fc-stat">
+              <span class="fc-stat__label">${this.t('forecast.peak')}</span>
+              <span class="fc-stat__value">${peak !== null ? figure(peak) : '—'}<span class="fc-stat__unit">kWh</span></span>
+            </div>
+            <div class="fc-stat">
+              <span class="fc-stat__label">${this.t('forecast.peak_at')}</span>
+              <span class="fc-stat__value"
+                >${peakHour !== null ? `${String(peakHour).padStart(2, '0')}:00` : '—'}</span
+              >
+            </div>
+            <div class="fc-stat">
+              <span class="fc-stat__label">${this.t('forecast.sun_hours')}</span>
+              <span class="fc-stat__value"
+                >${sunHours !== null ? sunHours : '—'}<span class="fc-stat__unit">${this.t('forecast.hours_unit')}</span></span
+              >
+            </div>
+          </div>
         `
       : html`<div class="fc-none">${this.t('forecast.none')}</div>`;
 

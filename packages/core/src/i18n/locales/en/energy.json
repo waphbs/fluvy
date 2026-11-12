@@ -303,6 +303,8 @@
     "of_forecast": "of forecast",
     "peak": "Peak",
     "peak_at": "Peak at",
-    "none": "No forecast for this day"
+    "none": "No forecast for this day",
+    "sun_hours": "Sun hours",
+    "hours_unit": "h"
   }
 }
