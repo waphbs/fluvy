@@ -166,10 +166,27 @@ describe('findEnergyRoles — the sun’s forecast of a day', () => {
     expect(roles.solarForecast).toBe('sensor.solcast_forecast_today');
   });
 
-  it('says nothing when the forecast carries no hours', () => {
+  it('reads a day from its total alone when the forecast carries no hours', () => {
     const roles = house([
       reading('sensor.solcast_forecast_today', '今天总发电量-预测', '86.0'),
     ]);
-    expect(roles.solarForecast).toBeUndefined();
+    expect(roles.solarForecast).toBe('sensor.solcast_forecast_today');
+  });
+
+  it('orders the days a forecast names, today first ("Forecast Day 3" third)', () => {
+    const roles = house([
+      reading('sensor.solcast_forecast_day_5', '今天总发电量-预测 Forecast Day 5', '24.0'),
+      reading('sensor.solcast_forecast_today', '今天总发电量-预测', '86.0'),
+      reading('sensor.solcast_forecast_day_3', '今天总发电量-预测 Forecast Day 3', '75.1'),
+      reading('sensor.solcast_forecast_tomorrow', '明天总发电量-预测', '45.1'),
+    ]);
+    // "Forecast Day 4" is missing: it keeps its hollow place rather than sliding day 5 back
+    expect(roles.solarForecastDays).toEqual([
+      'sensor.solcast_forecast_today',
+      'sensor.solcast_forecast_tomorrow',
+      'sensor.solcast_forecast_day_3',
+      '',
+      'sensor.solcast_forecast_day_5',
+    ]);
   });
 });

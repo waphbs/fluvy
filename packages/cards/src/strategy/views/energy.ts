@@ -157,7 +157,7 @@ function todayView(ctx: StrategyContext): Section[] {
 /** What the sun makes: today's production and the day ahead, its last days as bars, each inverter's gauge and its day. */
 function productionView(ctx: StrategyContext): Section[] {
   const { t, energy } = ctx;
-  const { solarToday, solarForecast, solarForecastTomorrow } = energy;
+  const { solarToday, solarForecast, solarForecastTomorrow, solarForecastDays } = energy;
   // the day and the day ahead ride in the lead column together: a phone then reads them in that order, and the
   // columns are cut level behind them
   const lead: Card[] = [
@@ -170,9 +170,9 @@ function productionView(ctx: StrategyContext): Section[] {
     ...when(solarForecastTomorrow, (id) => [full('forecast', { tomorrow: id })]),
     ...when(solarForecast ?? solarForecastTomorrow, () => [
       full('forecast-days', {
-        forecast: [solarForecast, solarForecastTomorrow].filter(
-          (id): id is string => id !== undefined,
-        ),
+        forecast: solarForecastDays.length
+          ? solarForecastDays
+          : [solarForecast, solarForecastTomorrow].filter((id): id is string => id !== undefined),
         days: 7,
       }),
     ]),
