@@ -90,6 +90,8 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
         align-items: end;
         gap: 2px;
         height: 44px;
+        cursor: crosshair;
+        touch-action: pan-y;
       }
       .fc-col {
         display: flex;
@@ -105,6 +107,9 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
       }
       .fc-fc {
         background: color-mix(in srgb, var(--tone-ink, var(--fluvy-state-energy-solar)) 26%, transparent);
+      }
+      .fc-fc.is-on {
+        background: var(--tone-ink, var(--fluvy-state-energy-solar));
       }
       .fc-axis {
         display: flex;
@@ -133,6 +138,23 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
   ];
   static override keys = configKeys<ForecastCardConfig>()(['title', 'subtitle', 'tomorrow', 'actual']);
   private readonly head = new HeadFit(this);
+  /** The hour a pointer (or a tap) is on: its forecast in the line instead of the day's total. */
+  private hoveredHour: number | null = null;
+
+  /** The hour a pointer at `event` is over, or null when the plot has no width. */
+  private hourAt(event: PointerEvent): number | null {
+    const plot = event.currentTarget as HTMLElement | null;
+    const rect = plot?.getBoundingClientRect();
+    if (!rect || rect.width <= 0) return null;
+    const fraction = (event.clientX - rect.left) / rect.width;
+    return Math.max(0, Math.min(HOURS - 1, Math.floor(fraction * HOURS)));
+  }
+
+  private point(hour: number | null): void {
+    if (hour === this.hoveredHour) return;
+    this.hoveredHour = hour;
+    this.requestUpdate();
+  }
 
   protected override watched(): readonly string[] {
     const id = this.config?.tomorrow ?? '';
@@ -167,11 +189,27 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
   private plot(forecastHours: readonly number[] | null, ceiling: number): TemplateResult {
     const height = (value: number | undefined): string =>
       ceiling > 0 && value !== undefined ? `${Math.max(0, Math.min(100, (value / ceiling) * 100))}%` : '0%';
-    return html`<div class="fc-plot">
+    return html`<div
+      class="fc-plot"
+      @pointermove=${(event: PointerEvent) => {
+        if (event.pointerType !== 'touch') this.point(this.hourAt(event));
+      }}
+      @pointerdown=${(event: PointerEvent) => {
+        const hour = this.hourAt(event);
+        this.point(event.pointerType === 'touch' && hour === this.hoveredHour ? null : hour);
+      }}
+      @pointerleave=${(event: PointerEvent) => {
+        // a finger lifts off the bar it tapped: the hour it picked stays, a mouse leaving does not
+        if (event.pointerType !== 'touch') this.point(null);
+      }}
+    >
       ${Array.from(
         { length: HOURS },
         (_unused, hour) => html`<div class="fc-col">
-          <span class="fc-fc" style="height:${height(forecastHours?.[hour])}"></span>
+          <span
+            class="fc-fc ${this.hoveredHour === hour ? 'is-on' : ''}"
+            style="height:${height(forecastHours?.[hour])}"
+          ></span>
         </div>`,
       )}
     </div>`;
@@ -190,17 +228,22 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
     const peakHour =
       tomorrow?.hours && peak !== null && peak > 0 ? tomorrow.hours.indexOf(peak) : null;
     const ceiling = Math.max(peak ?? 0, 0);
+    // the line reads the hour a pointer is on, or the day's total when it is elsewhere
+    const hour = this.hoveredHour !== null && tomorrow?.hours ? this.hoveredHour : null;
+    const shown = hour !== null && tomorrow?.hours ? (tomorrow.hours[hour] ?? 0) : (tomorrow?.total ?? 0);
 
     const body = tomorrow
       ? html`
           <div class="fc-total">
-            <span class="fc-value">${figure(tomorrow.total ?? 0)}</span>
+            <span class="fc-value">${figure(shown)}</span>
             <span class="fc-unit">kWh</span>
-            ${peak !== null && peakHour !== null
-              ? html`<span class="fc-peak"
-                  >${this.t('forecast.peak')} ${figure(peak)} kW · ${String(peakHour).padStart(2, '0')}:00</span
-                >`
-              : nothing}
+            ${hour !== null
+              ? html`<span class="fc-peak">${String(hour).padStart(2, '0')}:00 – ${String(hour + 1).padStart(2, '0')}:00</span>`
+              : peak !== null && peakHour !== null
+                ? html`<span class="fc-peak"
+                    >${this.t('forecast.peak')} ${figure(peak)} kW · ${String(peakHour).padStart(2, '0')}:00</span
+                  >`
+                : nothing}
           </div>
           ${this.plot(tomorrow.hours, ceiling)}
           <div class="fc-axis"><span>00:00</span><span>12:00</span><span>24:00</span></div>
