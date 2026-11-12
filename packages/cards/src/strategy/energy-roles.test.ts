@@ -8,15 +8,16 @@ const reading = (
   id: string,
   friendly_name: string,
   state: string,
-  device_class: 'power' | 'energy',
+  device_class: 'power' | 'energy' = 'energy',
   platform?: string,
-) => ({ id, friendly_name, state, device_class, platform });
+  attributes?: Readonly<Record<string, unknown>>,
+) => ({ id, friendly_name, state, device_class, platform, attributes });
 
 /** A house of those readings, nothing else, with the energy dashboard's preferences where it has them. */
 function roles(readings: readonly ReturnType<typeof reading>[], prefs: EnergyPrefs | null = null) {
   const home = new HomeRegistry({
     states: Object.fromEntries(
-      readings.map(({ id, friendly_name, state, device_class }) => [
+      readings.map(({ id, friendly_name, state, device_class, attributes }) => [
         id,
         {
           entity_id: id,
@@ -26,6 +27,7 @@ function roles(readings: readonly ReturnType<typeof reading>[], prefs: EnergyPre
             device_class,
             state_class: device_class === 'energy' ? 'total_increasing' : 'measurement',
             unit_of_measurement: device_class === 'energy' ? 'kWh' : 'W',
+            ...attributes,
           },
           last_changed: '',
           last_updated: '',
@@ -133,18 +135,13 @@ describe('findEnergyRoles — a forecast is not a reading (#170)', () => {
 });
 
 /** A forecast of a day: its total as the state, its hours in the attribute Solcast ships. */
-const dayForecast = (id: string, name: string, state: string) => {
-  const base = reading(id, name, state);
-  return {
-    ...base,
-    attributes: {
-      ...base.attributes,
-      detailedHourly: Array.from({ length: 24 }, (_unused, hour) =>
-        hour > 6 && hour < 19 ? 1 : 0,
-      ),
-    },
-  };
-};
+const dayForecast = (id: string, name: string, state: string) =>
+  reading(id, name, state, 'energy', undefined, {
+    detailedHourly: Array.from({ length: 24 }, (_unused, hour) => (hour > 6 && hour < 19 ? 1 : 0)),
+  });
+
+/** The older name of the same helper, so the tests below read as they were written. */
+const house = roles;
 
 describe('findEnergyRoles — the sun’s forecast of a day', () => {
   it('reads today’s forecast and tomorrow’s apart, by their names', () => {

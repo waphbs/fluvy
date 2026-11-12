@@ -116,7 +116,7 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
   const HOURY = ['detailedHourly', 'detailedForecast', 'wh_period', 'wh_hours', 'hourly', 'forecast'];
   const DAY_WORDS = /(日发电|日發電|日発電|日发电量|日發電量|日発電量)/;
   const forecastReading = (id: string): boolean =>
-    (FORECAST.test(home.label(id)) || FORECAST.test(id) || home.forecast(id)) &&
+    home.forecast(id) &&
     !FORECAST_SKIP.test(home.label(id)) &&
     !FORECAST_SKIP_ID.test(id) &&
     home.hasState(id) &&
