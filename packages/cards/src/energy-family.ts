@@ -544,7 +544,7 @@ export const ENERGY_FAMILY: readonly FamilyEntry[] = [
   [
     'fluvy-forecast-card',
     'Fluvy · Solar forecast',
-    'The sun’s day, forecast against what came in: today’s hourly forecast beside the meter’s gain, the day’s total and how much of it is in, and tomorrow under them.',
+    'The sun’s day ahead: tomorrow’s total, its peak hour and the shape of the day as 24 bars — today’s forecast already sits beside the meter on the production card.',
     () => 292,
   ],
   [
