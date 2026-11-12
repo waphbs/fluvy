@@ -539,6 +539,12 @@ export const ENERGY_FAMILY: readonly FamilyEntry[] = [
     () => 292,
   ],
   [
+    'fluvy-forecast-days-card',
+    'Fluvy · Days ahead',
+    'The days ahead as bars: each day the forecast sensors reach, with the total, the daily average and the best day under them.',
+    () => 300,
+  ],
+  [
     'fluvy-history-bars-card',
     'Fluvy · History bars',
     'A sensor’s last days, weeks or months as bars from its long-term statistics: the total and the average in the head, the value over each bar, and a strip of facts under them — the highest and lowest, or what it comes to in CO₂, trees, kilometres or money.',
