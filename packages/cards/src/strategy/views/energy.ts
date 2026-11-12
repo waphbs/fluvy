@@ -171,7 +171,13 @@ function productionView(ctx: StrategyContext): Section[] {
   ];
   return balanced(ctx, [
     lead,
-    ...when(solarToday, (id) => [full('history-bars', { entity: id, color: 'amber' })]),
+    ...when(solarToday, (id) => [
+      full('history-bars', {
+        entity: id,
+        color: 'amber',
+        ...(solarForecast ? { forecast_entity: solarForecast } : {}),
+      }),
+    ]),
     ...solarGauges(energy),
     ...solarCurves(energy, { name: t('energy.solar') }),
   ]);
