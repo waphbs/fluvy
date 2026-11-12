@@ -896,6 +896,7 @@ describe('custom:fluvy-home strategy', () => {
       'custom:fluvy-slider-card',
       'custom:fluvy-vehicle-card',
       'custom:fluvy-forecast-card',
+      'custom:fluvy-forecast-days-card',
     ]);
     expect(
       CATALOGUE.map(([tag]) => `custom:${tag}`).filter(

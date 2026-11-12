@@ -198,6 +198,8 @@ export interface EnergyRoles {
   readonly solarForecast: string | undefined;
   /** Tomorrow's forecast, drawn as the row under today's forecast chart. */
   readonly solarForecastTomorrow: string | undefined;
+  /** Forecast sensors that name their day, in order from today ("Forecast Day 3" and friends). */
+  readonly solarForecastDays: readonly string[];
   /** The energy dashboard's devices (their energy statistics) and the power sensor beside each. */
   readonly consumption: readonly string[];
   readonly consumptionPowers: readonly string[];

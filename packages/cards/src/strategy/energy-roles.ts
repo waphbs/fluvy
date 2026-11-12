@@ -141,22 +141,52 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
   const FORECAST_SKIP_ID =
     /(_sheng_yu|_dang_qian|_1xiao_shi|_gong_lu|_gao_feng|_api_|_hard_limit|_home|_30fen_zhong|_1xiao_shi_hou)/i;
   const HOURY = ['detailedHourly', 'detailedForecast', 'wh_period', 'wh_hours', 'hourly', 'forecast'];
-  const forecastDay = (id: string): boolean =>
+  const forecastReading = (id: string): boolean =>
     (FORECAST.test(home.label(id)) || FORECAST.test(id)) &&
     !FORECAST_SKIP.test(home.label(id)) &&
     !FORECAST_SKIP_ID.test(id) &&
     home.hasState(id) &&
-    reading(id) &&
-    HOURY.some((name) => home.hasAttr(id, name));
+    reading(id);
+  const forecastDay = (id: string): boolean =>
+    forecastReading(id) && HOURY.some((name) => home.hasAttr(id, name));
   const TOMORROW =
     /(明天|明日|tomorrow|morgen|mañana|demain|domani|jutro|amanh|내일|пер[её]д?завтра)/i;
   const forecastDays = energies.filter(forecastDay);
-  const solarForecastTomorrow = forecastDays.find((id) => TOMORROW.test(home.label(id)));
-  const solarForecast = forecastDays.find(
-    (id) =>
-      id !== solarForecastTomorrow &&
-      (TODAY.test(home.label(id)) || DAILY.test(home.label(id))),
-  );
+  // A forecast that names its day outright ("Forecast Day 3"): the day's total is its state, and the hours may be
+  // missing, so the card reads the state when there are none. Today and tomorrow come first, an explicit "Day 3"
+  // beats the "today" their device's name lends them.
+  const DAY_OF = /(?:day|día|dia|jour|tag|journée|giorno|dzień|día|dag|日目|일)\s*_?\s*(\d+)/i;
+  const dayOf = (id: string): number | null => {
+    const words = `${home.label(id)} ${id}`;
+    const named = DAY_OF.exec(words);
+    if (named?.[1] !== undefined) return Math.max(0, Number(named[1]) - 1);
+    if (TOMORROW.test(words)) return 1;
+    if (TODAY.test(words) || DAILY.test(words)) return 0;
+    return null;
+  };
+  const byDay = new Map<number, string>();
+  for (const id of energies) {
+    if (!forecastReading(id)) continue;
+    const offset = dayOf(id);
+    if (offset === null || byDay.has(offset)) continue;
+    byDay.set(offset, id);
+  }
+  // a day the forecast skips keeps its place as an empty string: the card draws it hollow rather than sliding the
+  // days after it back
+  const lastDay = Math.max(-1, ...byDay.keys());
+  const solarForecastDays: string[] = [];
+  for (let offset = 0; offset <= lastDay && offset < 14; offset += 1) {
+    solarForecastDays.push(byDay.get(offset) ?? '');
+  }
+  const solarForecastTomorrow =
+    byDay.get(1) ?? forecastDays.find((id) => TOMORROW.test(home.label(id)));
+  const solarForecast =
+    byDay.get(0) ??
+    forecastDays.find(
+      (id) =>
+        id !== solarForecastTomorrow &&
+        (TODAY.test(home.label(id)) || DAILY.test(home.label(id))),
+    );
   const consumption = (prefs?.device_consumption ?? [])    .map((d) => d.stat_consumption)
     .filter((id) => home.hasState(id));
   // each device's power: the power sensor beside its energy statistic (same device, or the same name stem);
@@ -186,6 +216,7 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
     solarToday,
     solarForecast,
     solarForecastTomorrow,
+    solarForecastDays,
     consumption,
     consumptionPowers,
     // the cards read the energy dashboard themselves when it carries the grid's power (or the house has no grid to
