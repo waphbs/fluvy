@@ -165,6 +165,11 @@ export interface HistoryBarsCardConfig
   source?: Source;
   /** The bucket in progress (today, this week, this month) as the last bar; off by default, so the bars are finished ones. */
   include_today?: boolean;
+  /**
+   * A daily forecast sensor (today's, as Solcast and the like carry them): each bar's day is drawn behind it with the
+   * highest that sensor read in that day — what was expected — so the bars read against their forecast.
+   */
+  forecast_entity?: string;
   /** Decimals of the figures, 1 by default. */
   decimals?: number;
   /** The unit the figures read in: energy, power, volume and distance convert; any other is ignored (the sensor's own). */
@@ -684,6 +689,9 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
   /** The card's sensor while it is missing from the house: as the recorder describes it. */
   private readonly recorded = new RecordedSensors(this);
   private readonly shareSensors = new Map<string, Sensor>();
+  /** The daily forecast sensor's reads, drawn behind the bars (undefined while they load). */
+  private readonly forecastSensor: Sensor = { bars: new Reads(), counting: new Reads() };
+  declare forecast_: BarsRecord | null | undefined;
   /** The window the bars on screen are of (the sensor and how it is read, not the hour): another one shows the skeleton. */
   private window = '';
   private readonly head = new HeadFit(this);
@@ -714,6 +722,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     'stat',
     'reset',
     'source',
+    'forecast_entity',
     'include_today',
     'decimals',
     'unit',
@@ -1086,6 +1095,36 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
         (counted) => (this.shares_ = { ...this.shares_, [id]: { ...this.shares_[id], counted } }),
       );
     }
+    // each day's forecast behind its bar: the highest the named sensor read in that day
+    const forecastId = this.config?.forecast_entity;
+    if (forecastId) {
+      const of = this.entity(forecastId);
+      if (of.status !== 'missing' && this.recorded.ready(of)) {
+        const request: BarsRequest = {
+          ...this.requestOf(of, 'auto', now, this.unitOf(view)),
+          id: of.id,
+          stat: 'max',
+          // the history, not statistics: a total sensor's statistics keep the day's last reading, not its highest,
+          // and a forecast's highest reading of a day is the day's forecast
+          source: 'history',
+        };
+        const key = barsKey(hass, request);
+        out.push({
+          due: () => this.forecastSensor.bars.due(key),
+          run: () =>
+            this.forecastSensor.bars.ask(
+              key,
+              () => fetchBars(hass, request),
+              (record) => {
+                this.forecast_ = record;
+              },
+              () => {
+                this.forecast_ = null;
+              },
+            ),
+        });
+      }
+    }
     return out;
   }
 
@@ -1317,6 +1356,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
       : [];
     const scale = this.scaleOf(buckets, record?.buckets.length ?? 0, asked);
     const values = buckets.map((b) => (b.value === null ? null : this.scaled(b.value, scale)));
+    const forecast = this.forecastValues(buckets, scale);
     const current = live === null ? null : this.scaled(live, scale);
     const summary = summarise(values.slice(0, record?.buckets.length ?? 0), current, {
       drawn,
@@ -1394,7 +1434,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
             ></div>`
           : record === null || record === undefined
             ? html`<div class="hb-empty">${this.renderNone(view, failed, width)}</div>`
-            : this.renderChart(buckets, values, unit, tone, unusable, { hovered, running }, name);
+            : this.renderChart(buckets, values, forecast, unit, tone, unusable, { hovered, running }, name);
 
     return html`<article class="fv-card ${unusable ? 'is-unavailable is-off' : ''}" data-card>
       ${
@@ -1467,6 +1507,20 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     // the recorder answered in the asked unit: the divisor brings that unit to the one chosen
     const divisor = scale.divisor / base.value;
     return divisor > 1 ? { unit: scale.unit, divisor } : { unit: asked, divisor: 1 };
+  }
+
+  /** The bars' days as the forecast sensor had them, in the unit shown; null when it has nothing. */
+  private forecastValues(
+    buckets: readonly Bucket[],
+    scale: Scale,
+  ): ReadonlyArray<number | null> | null {
+    const record = this.forecast_;
+    if (!record || !record.buckets.length) return null;
+    const byStart = new Map(record.buckets.map((bucket) => [bucket.start, bucket.value] as const));
+    return buckets.map((bucket) => {
+      const value = byStart.get(bucket.start);
+      return value === undefined || value === null ? null : this.scaled(value, scale);
+    });
   }
 
   /** The total in kWh when the figures are energy, for the equivalents; null otherwise. */
@@ -1719,6 +1773,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
   private renderChart(
     buckets: readonly Bucket[],
     values: ReadonlyArray<number | null>,
+    forecast: ReadonlyArray<number | null> | null,
     unit: string,
     tone: Tone,
     unusable: boolean,
@@ -1734,7 +1789,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     const plotHeight = full ? PLOT : PLOT_COMPACT;
     const top = showValues ? VALUES : HEADROOM;
     const height = top + plotHeight + (showDates ? DATES : 0);
-    const known = values.filter((v): v is number => v !== null);
+    const known = [...values, ...(forecast ?? [])].filter((v): v is number => v !== null);
     const ticks = niceTicks(Math.min(0, ...known), Math.max(0, ...known));
     const tickTexts = ticks.ticks.map((t) => this.figure(t, ticks.decimals));
     const tickWidth = showAxis
@@ -1821,6 +1876,16 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
       // house's bars are); a bucket with nothing in it is a quiet 2 px stub on the line
       const tall = empty ? 0 : Math.max(2, Math.round(Math.abs(y(v) - zero)));
       const rounded = !classic && style.caps === 'both' ? 'both' : below ? 'bottom' : 'top';
+      // what was expected of that day, behind its bar (the tone at a fifth, so the bar reads over it)
+      const expected = forecast?.[i] ?? null;
+      const expectedTall =
+        expected === null || expected === 0 || span === 0
+          ? 0
+          : Math.max(2, Math.round(Math.abs(y(expected) - zero)));
+      const ghost =
+        expected !== null && expectedTall > 0
+          ? svg`<rect class="hb-forecast" x=${(cx - Math.max(bar + 4, Math.round(slot * 0.72)) / 2).toFixed(1)} y=${(expected >= 0 ? zero - expectedTall : zero).toFixed(1)} width=${Math.max(bar + 4, Math.round(slot * 0.72))} height=${expectedTall} rx=${Math.min(radius, 3)} style="fill:var(--tone-ink, var(--fluvy-state-energy-solar));fill-opacity:.08;stroke:var(--tone-ink, var(--fluvy-state-energy-solar));stroke-opacity:.45;stroke-width:1"></rect>`
+          : nothing;
       const rect = empty
         ? svg`<rect class="hb-bar is-empty ${hover} ${now}" x=${x} y=${(zero - 2).toFixed(1)} width=${bar} height="2" rx=${Math.min(1, radius)}></rect>`
         : svg`<path class="hb-bar ${below ? 'is-negative' : ''} ${hover} ${now}" data-accent=${accent ?? nothing} d=${barPath(cx - bar / 2, below ? zero : zero - tall, bar, tall, radius, rounded)} style="--bar-delay:${i * 18}ms${fill}"></path>`;
@@ -1832,7 +1897,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
         showDates && dated[i]
           ? svg`<text class="hb-date" x=${this.clampedX(cx, this.ruler.width('hb-date', dateTexts[i] ?? ''), inset, width)} y=${dateY} text-anchor="middle">${dateTexts[i]}</text>`
           : nothing;
-      return svg`${rect}${label}${date}`;
+      return svg`${ghost}${rect}${label}${date}`;
     });
 
     // classic's dashes, a style's hairlines (none where the house draws none)
