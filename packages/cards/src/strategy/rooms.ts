@@ -4,7 +4,7 @@ import { byArea, capped, each, foldAt, moreAfter, moreKeys } from './caps.js';
 import type { HomeRegistry } from './home-registry.js';
 import {
   applianceTile,
-  entityRow,
+  entityRows,
   flowed,
   full,
   headed,
@@ -183,7 +183,7 @@ export function roomSections(
       tiles: ids.map((id) => ({ entity: id, ...home.named(id) })),
     });
   const rows = (title: string, ids: readonly string[], extra: Record<string, unknown> = {}): Card =>
-    full('entities', { title, rows: ids.map((id) => entityRow(home, id)), ...extra });
+    full('entities', { title, rows: entityRows(home, ids), ...extra });
   const thermostats = capped(
     ctx,
     { key: 'thermostats', title: 'strategy.thermostats', icon: 'fluvy:thermo' },

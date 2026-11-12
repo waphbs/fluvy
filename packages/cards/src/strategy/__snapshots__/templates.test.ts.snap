@@ -124,7 +124,7 @@ exports[`the dashboard templates > end a capped list with "N more" and open ever
             "grid_options": {
               "columns": 12,
             },
-            "name": "Garden",
+            "name": "Garden 2",
             "type": "custom:fluvy-sensor-card",
           },
         ],

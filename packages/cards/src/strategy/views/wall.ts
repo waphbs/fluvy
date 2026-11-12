@@ -1,6 +1,6 @@
 import type { AreaRegistryEntry } from '@fluvy/core';
 import { byArea, capped, moreCard, moreKeys } from '../caps.js';
-import { entityRow, full, helloCard, readoutsCards, section, thermostat } from '../layout.js';
+import { entityRows, full, helloCard, readoutsCards, section, thermostat } from '../layout.js';
 import { roomCard, roomsOf } from '../rooms.js';
 import type { Card, Section, StrategyContext, ViewSpec } from '../types.js';
 
@@ -25,7 +25,7 @@ function wallView(ctx: StrategyContext): Section[] {
   const { home, t, weather, style } = ctx;
   const scenes = home.scenes.slice(0, style.scenes ?? 6);
   const rows = (title: string, ids: readonly string[], extra: Record<string, unknown> = {}): Card =>
-    full('entities', { title, rows: ids.map((id) => entityRow(home, id)), ...extra });
+    full('entities', { title, rows: entityRows(home, ids), ...extra });
   const readings = capped(
     ctx,
     { key: 'readings', title: 'strategy.readings', icon: 'fluvy:thermo' },

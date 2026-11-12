@@ -57,6 +57,19 @@ export const deviceRow = (home: HomeRegistry, entity: string) => ({
   name: home.deviceLabel(entity),
 });
 /**
+ * Rows naming the readings themselves (`entityRow`), told apart when two would read the same: two weather integrations
+ * in one area both call a sensor `大气压`, so the second says which device it comes from instead.
+ */
+export const entityRows = (home: HomeRegistry, ids: readonly string[]) => {
+  const name = home.rowNames(ids);
+  return ids.map((entity) => ({ entity, ...home.named(entity, name(entity)) }));
+};
+/** The same for rows that name a device's reading (`deviceRow`). */
+export const deviceRows = (home: HomeRegistry, ids: readonly string[]) => {
+  const name = home.rowNames(ids);
+  return ids.map((entity) => ({ entity, name: name(entity) }));
+};
+/**
  * A tile's switch as the dashboard asks (`tile_switch`), in its card's own words (`show_switch`): hidden, its level's
  * figure in its place, or nothing said where it shows.
  */
@@ -176,7 +189,7 @@ export const readoutsCards = (
   home: HomeRegistry,
   ids: readonly string[],
   extra: Record<string, unknown> = {},
-  nameOf: (id: string) => string = (id) => home.placeName(id),
+  nameOf: (id: string) => string = home.placeNames(ids),
 ): Card[] =>
   (ids.length > 4 ? runsOf(ids, 3) : ids.length ? [ids] : []).map((run) => ({
     type: 'custom:fluvy-readouts-card',

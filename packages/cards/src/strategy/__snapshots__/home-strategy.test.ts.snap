@@ -376,7 +376,7 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
               "grid_options": {
                 "columns": 12,
               },
-              "name": "Garden",
+              "name": "Garden 2",
               "type": "custom:fluvy-sensor-card",
             },
           ],

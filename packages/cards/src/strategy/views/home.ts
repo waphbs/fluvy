@@ -1,9 +1,9 @@
 import {
   applianceTile,
   balanced,
-  deviceRow,
+  deviceRows,
   energyFlow,
-  entityRow,
+  entityRows,
   flowed,
   full,
   hasSources,
@@ -58,7 +58,7 @@ const rowsCard = (
   title: string,
   ids: readonly string[],
   extra: Record<string, unknown> = {},
-): Card => full('entities', { title, rows: ids.map((id) => entityRow(home, id)), ...extra });
+): Card => full('entities', { title, rows: entityRows(home, ids), ...extra });
 
 /**
  * What needs a look, first on Home and hidden while all is clear: leaks and smoke, what is left open (five minutes, the
@@ -211,16 +211,18 @@ export function lightsView(ctx: StrategyContext): Section[] {
 /** Thermostats first, then the forecast, humidity and temperatures, shared out so the three columns end level. */
 export function climateView(ctx: StrategyContext): Section[] {
   const { home } = ctx;
+  // a place can hold two readings (outside: a temperature and a humidity): each says which one it is
+  const place = home.placeNames([...home.humidities, ...home.temperatures]);
   const fan = (id: string): Card => full('fan', { entity: id, ...home.named(id) });
   const humidity = (id: string): Card => {
     const temperature = home.temperatureBeside(id);
     return full('humidity', {
       entity: id,
-      name: home.placeName(id),
+      name: place(id),
       ...(temperature ? { temperature_entity: temperature } : {}),
     });
   };
-  const sensor = (id: string): Card => full('sensor', { entity: id, name: home.placeName(id) });
+  const sensor = (id: string): Card => full('sensor', { entity: id, name: place(id) });
   const thermostats = capped(
     ctx,
     { key: 'thermostats', title: 'strategy.thermostats', icon: 'fluvy:thermo' },
@@ -424,7 +426,7 @@ export function sensorsView(ctx: StrategyContext): Section[] {
   const zones = home.zones.filter((id) => id !== 'zone.home');
   const { openings, people } = home;
   const bars = (title: string, rows: readonly unknown[]): Card => full('bars', { title, rows });
-  const devices = (ids: readonly string[]): unknown[] => ids.map((id) => deviceRow(home, id));
+  const devices = (ids: readonly string[]): unknown[] => deviceRows(home, ids);
   const helpersCard = (title: string, ids: readonly string[]): Card =>
     full('helpers', { title, entities: [...ids] });
   const updatesCard = (title: string, ids: readonly string[]): Card =>

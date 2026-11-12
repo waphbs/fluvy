@@ -218,6 +218,67 @@ export function roomLook(raw: unknown, prefix = ''): RoomLook {
   ) as RoomLook;
 }
 
+
+/**
+ * A namer over `ids` that never returns the same name twice: each starts from `first`, and a name already taken falls
+ * back to `second`, then `third`, then the name numbered.
+ */
+function toldApart(
+  ids: readonly string[],
+  first: (id: string) => string,
+  second: (id: string) => string,
+  third: (id: string) => string,
+): (id: string) => string {
+  const bases = ids.map((id) => first(id) || id);
+  const counts = new Map<string, number>();
+  for (const base of bases) counts.set(base, (counts.get(base) ?? 0) + 1);
+  // asked only when a name would repeat: reading the registries for every id is wasted work, and a broken registry
+  // must not stop a dashboard that never needed the extra name (#129)
+  const ask = (read: (id: string) => string, id: string): string => {
+    try {
+      return read(id);
+    } catch {
+      return '';
+    }
+  };
+  const taken = new Set<string>();
+  const counted = new Set<string>();
+  const names = new Map<string, string>();
+  ids.forEach((id, at) => {
+    const base = bases[at]!;
+    let name = '';
+    // a repeated place says which reading it is on every card, not just the second one
+    if ((counts.get(base) ?? 0) === 1 && !taken.has(base)) name = base;
+    if (!name) {
+      for (const part of [ask(second, id), ask(third, id)]) {
+        if (!part || part === base) continue;
+        if (!taken.has(`${base} · ${part}`)) {
+          name = `${base} · ${part}`;
+          break;
+        }
+        if (!taken.has(part)) {
+          name = part;
+          break;
+        }
+      }
+    }
+    if (!name) {
+      // nothing readable to tell them apart: the first keeps the plain name, the rest count up
+      if (!taken.has(base) && !counted.has(base)) {
+        name = base;
+        counted.add(base);
+      } else {
+        let n = 2;
+        while (taken.has(`${base} ${n}`)) n += 1;
+        name = `${base} ${n}`;
+      }
+    }
+    taken.add(name);
+    names.set(id, name);
+  });
+  return (id) => names.get(id) ?? first(id);
+}
+
 export class HomeRegistry {
   /** The house as the dashboard reads it: without what its `exclude` leaves out, as if the house had none of it. */
   private readonly hass: Registry;
@@ -396,6 +457,51 @@ export class HomeRegistry {
         .replace(LOOSE_ENDS, '');
       return device ? inCaseOf(name, device) : this.displayName(id);
     });
+  }
+  /**
+   * Names for a set of readings that must not repeat: the place of each (`placeName`), and where two share one, the
+   * reading's own name or its device's, so a list of meters never shows the same label twice.
+   */
+  placeNames(ids: readonly string[]): (id: string) => string {
+    return toldApart(
+      ids,
+      (id) => this.placeName(id),
+      (id) => this.readable(id, this.ownReading(id)),
+      (id) => this.readable(id, this.deviceLabel(id)),
+    );
+  }
+  /** The same for rows that name a reading rather than where it is (`displayName`). */
+  rowNames(ids: readonly string[]): (id: string) => string {
+    return toldApart(
+      ids,
+      (id) => this.displayName(id),
+      (id) => this.readable(id, this.deviceLabel(id)),
+      (id) => this.readable(id, this.areaName(this.areaOf(id)) ?? ''),
+    );
+  }
+  /**
+   * The reading's own words, without the place or device it belongs to and without the integration's English words:
+   * 「寿光天气 户外气温（寿光）」 in 户外 reads 气温, 「电池组 1 discharging power 实时放电功率」 reads 实时放电功率.
+   */
+  private ownReading(id: string): string {
+    const strip = (text: string, cut: string): string =>
+      cut && text.toLowerCase().startsWith(cut.toLowerCase()) ? text.slice(cut.length) : text;
+    let own = this.ownName(id)
+      .replace(/[（(][^）)]*[）)]/g, ' ')
+      .split(/\s+/)
+      .filter((word) => !/^[A-Za-z]{2,}$/.test(word))
+      .join(' ')
+      .trim();
+    own = strip(own, this.areaName(this.areaOf(id)) ?? '');
+    own = strip(own, this.deviceName(id) ?? '');
+    return own.replace(/^[-\s·:：]+/, '').trim();
+  }
+  /** A name worth reading: not empty and not the entity's own id spelled out. */
+  private readable(id: string, name: string): string {
+    const bare = name.replace(/\s+/g, '');
+    return bare && bare !== id && bare !== id.slice(id.indexOf('.') + 1) && !/^[a-z0-9_.-]+$/.test(bare)
+      ? name
+      : '';
   }
   /** `name` for a card only when it improves on what the card would show by itself. */
   named(id: string, name = this.displayName(id)): Record<string, string> {
