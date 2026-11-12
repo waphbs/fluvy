@@ -3008,6 +3008,12 @@
     "peak_at": "峰值时刻",
     "none": "这一天没有预报",
     "sun_hours": "日照小时",
-    "hours_unit": "小时"
+    "hours_unit": "小时",
+    "days_title": "未来 {n} 天",
+    "days_sub": "逐日预测",
+    "days_total": "合计",
+    "days_average": "日均",
+    "days_best": "最好",
+    "days_none": "还没有未来几天的预报"
   }
 }

@@ -305,6 +305,12 @@
     "peak_at": "Peak at",
     "none": "No forecast for this day",
     "sun_hours": "Sun hours",
-    "hours_unit": "h"
+    "hours_unit": "h",
+    "days_title": "Next {n} days",
+    "days_sub": "Day by day",
+    "days_total": "Total",
+    "days_average": "Daily",
+    "days_best": "Best",
+    "days_none": "No forecast for the days ahead yet"
   }
 }

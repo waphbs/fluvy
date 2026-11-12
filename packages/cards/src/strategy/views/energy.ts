@@ -168,16 +168,18 @@ function productionView(ctx: StrategyContext): Section[] {
       }),
     ]),
     ...when(solarForecastTomorrow, (id) => [full('forecast', { tomorrow: id })]),
+    ...when(solarForecast ?? solarForecastTomorrow, () => [
+      full('forecast-days', {
+        forecast: [solarForecast, solarForecastTomorrow].filter(
+          (id): id is string => id !== undefined,
+        ),
+        days: 7,
+      }),
+    ]),
   ];
   return balanced(ctx, [
     lead,
-    ...when(solarToday, (id) => [
-      full('history-bars', {
-        entity: id,
-        color: 'amber',
-        ...(solarForecast ? { forecast_entity: solarForecast } : {}),
-      }),
-    ]),
+    ...when(solarToday, (id) => [full('history-bars', { entity: id, color: 'amber' })]),
     ...solarGauges(energy),
     ...solarCurves(energy, { name: t('energy.solar') }),
   ]);
