@@ -154,22 +154,23 @@ function todayView(ctx: StrategyContext): Section[] {
     : [];
 }
 
-/** What the sun makes: today's production, its last days as bars, each inverter's gauge and its day. */
+/** What the sun makes: today's production and the day ahead, its last days as bars, each inverter's gauge and its day. */
 function productionView(ctx: StrategyContext): Section[] {
   const { t, energy } = ctx;
   const { solarToday, solarForecast, solarForecastTomorrow } = energy;
-  return balanced(ctx, [
+  // the day and the day ahead ride in the lead column together: a phone then reads them in that order, and the
+  // columns are cut level behind them
+  const lead: Card[] = [
     ...when(solarToday, (id) => [
       full('production', {
         entity: id,
         ...(solarForecast ? { forecast_entity: solarForecast } : {}),
       }),
     ]),
-    ...when(solarForecastTomorrow, (id) => [
-      full('forecast', {
-        tomorrow: id,
-      }),
-    ]),
+    ...when(solarForecastTomorrow, (id) => [full('forecast', { tomorrow: id })]),
+  ];
+  return balanced(ctx, [
+    lead,
     ...when(solarToday, (id) => [full('history-bars', { entity: id, color: 'amber' })]),
     ...solarGauges(energy),
     ...solarCurves(energy, { name: t('energy.solar') }),
