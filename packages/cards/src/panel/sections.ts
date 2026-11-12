@@ -1880,6 +1880,18 @@ export function wall(ctx: PanelContext): TemplateResult {
         </button>
       </div>
       <p class="pn-hint pn-hint--after">${ctx.t('wall.address_sub')}</p>
+      ${isWall
+        ? nothing
+        : html`<div class="pn-rows">
+            ${listRow({
+              icon: 'frame',
+              tone: 'accent',
+              title: ctx.t('wall.make_this'),
+              sub: ctx.t('wall.make_this_sub'),
+              trailing: 'chevron',
+              onTap: () => ctx.editDevice({ wall: true }),
+            })}
+          </div>`}
     </section>
     <section class="fv-card pn-card">
       ${head({
@@ -1902,6 +1914,7 @@ export function wall(ctx: PanelContext): TemplateResult {
           }),
         )}
       </div>
+      ${isWall ? nothing : html`<p class="pn-hint pn-hint--after">${ctx.t('wall.not_a_wall')}</p>`}
     </section>
     <section class="fv-card pn-card">
       ${head({ icon: 'clock', title: ctx.t('wall.screen'), ...(admin ? {} : { sub: ctx.t('scope.admin_only') }) })}
