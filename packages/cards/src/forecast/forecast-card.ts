@@ -66,7 +66,8 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
         display: flex;
         flex-direction: column;
         gap: 8px;
-        padding: 0 16px 16px;
+        /* the card holds the side padding: the chart is drawn at contentWidth, so the body must not add its own */
+        padding: 0 0 16px;
       }
       .fc-when {
         margin-inline-start: auto;
