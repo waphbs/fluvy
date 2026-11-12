@@ -174,6 +174,50 @@ describe('the room lights in their bulbs’ colours, in every style (#58)', () =
   });
 });
 
+describe('a room’s switch reaches every reading in its own domain', () => {
+  /** A card whose service calls are recorded, of readings in the domains given. */
+  const mounted = async (): Promise<{ card: CardElement; calls: unknown[][] }> => {
+    const calls: unknown[][] = [];
+    const card = document.createElement('fluvy-lights-card') as CardElement;
+    card.setConfig({
+      type: 'custom:fluvy-lights-card',
+      variant: 'row',
+      lights: ['light.desk', 'switch.one', 'switch.two'],
+    });
+    const house0 = house({
+      'switch.one': state('switch.one', 'off', { friendly_name: 'One' }),
+      'switch.two': state('switch.two', 'off', { friendly_name: 'Two' }),
+    }) as unknown as { callService: (...args: unknown[]) => Promise<unknown> };
+    house0.callService = (...args: unknown[]): Promise<unknown> => {
+      calls.push(args);
+      return Promise.resolve();
+    };
+    card.hass = house0 as unknown as HomeAssistant;
+    document.body.append(card);
+    await card.updateComplete;
+    return { card, calls };
+  };
+
+  it('calls the light as a light and the relays as switches, one call a domain', async () => {
+    const { card, calls } = await mounted();
+    const room = card.shadowRoot!.querySelector<HTMLButtonElement>('.lt-room')!;
+    // desk is on, so the room goes off; the relays follow it in their own domain (the button reads `fvTap`)
+    (room as unknown as { fvTap(): void }).fvTap();
+    const sent = calls.map((call) => [call[0], call[1], call[2]]);
+    expect(sent).toEqual([
+      ['light', 'turn_off', { entity_id: ['light.desk'] }],
+      ['switch', 'turn_off', { entity_id: ['switch.one', 'switch.two'] }],
+    ]);
+  });
+
+  it('calls one relay alone in the switch domain too', async () => {
+    const { card, calls } = await mounted();
+    const bulb = card.shadowRoot!.querySelector<HTMLElement>('.lt-bulb')!;
+    bulb.click();
+    expect(calls.map((call) => call[0])).toEqual(['light']);
+  });
+});
+
 describe('the colour round (#137)', () => {
   const ROUND = '.fv-round.lt-colour';
 

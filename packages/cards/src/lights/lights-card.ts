@@ -221,6 +221,24 @@ interface Lamp {
  * light is its own control — a round on the room's line, a chip with its name, or a compact tile — that a tap turns
  * on and off and a hold opens. A light that is on wears its bulb's own colour, and its round a ring of its level.
  */
+/**
+ * A reading's domain: a light is a light's, and the switch a lamp is drawn from is its own — a room's switch may hold
+ * both, and `light.turn_on` never reaches a switch.
+ */
+const domainOf = (id: string): string => id.slice(0, Math.max(0, id.indexOf('.')));
+
+/** The readings by the domain each is called in. */
+function grouped(ids: readonly string[]): [string, string[]][] {
+  const groups = new Map<string, string[]>();
+  for (const id of ids) {
+    const domain = domainOf(id);
+    const held = groups.get(domain);
+    if (held) held.push(id);
+    else groups.set(domain, [id]);
+  }
+  return [...groups];
+}
+
 export class FluvyLightsCard extends FluvyTileCard {
   /** The card's height at a 360 column from its config alone: a room of three lights (`lightsHeight`). */
   static override layoutHeight(config: LightsCardConfig): number {
@@ -355,18 +373,15 @@ export class FluvyLightsCard extends FluvyTileCard {
     if (!usable.length || !this.hass) return;
     const next = !usable.some((lamp) => lamp.on);
     for (const lamp of usable) this.expect(lamp.view.id, next ? 'on' : 'off');
-    this.call(
-      'light',
-      next ? 'turn_on' : 'turn_off',
-      { entity_id: usable.map((lamp) => lamp.view.id) },
-      '',
-    );
+    // a room drawn from a relay's switches as much as from lights: each reading is called in its own domain
+    for (const [domain, ids] of grouped(usable.map((lamp) => lamp.view.id)))
+      this.call(domain, next ? 'turn_on' : 'turn_off', { entity_id: ids }, '');
   }
 
   private flipLamp(lamp: Lamp): void {
     if (!lamp.usable) return;
     this.expect(lamp.view.id, lamp.on ? 'off' : 'on');
-    this.call('light', lamp.on ? 'turn_off' : 'turn_on', {}, lamp.view.id);
+    this.call(domainOf(lamp.view.id), lamp.on ? 'turn_off' : 'turn_on', {}, lamp.view.id);
   }
 
   private openLamp(lamp: Lamp): void {
@@ -380,8 +395,11 @@ export class FluvyLightsCard extends FluvyTileCard {
     const targets = (lit.length ? lit : usable).map((lamp) => lamp.view.id);
     if (!targets.length) return;
     for (const id of targets) this.expect(id, value > 0 ? 'on' : 'off');
-    if (value <= 0) this.call('light', 'turn_off', { entity_id: targets }, '');
-    else this.call('light', 'turn_on', { entity_id: targets, brightness_pct: value }, '');
+    // a level is the light's own; a relay beside it takes the switch alone
+    for (const [domain, ids] of grouped(targets))
+      if (value <= 0) this.call(domain, 'turn_off', { entity_id: ids }, '');
+      else if (domain === 'light') this.call('light', 'turn_on', { entity_id: ids, brightness_pct: value }, '');
+      else this.call(domain, 'turn_on', { entity_id: ids }, '');
   }
 
   /** The average level of what is on and dims, or `null`. */

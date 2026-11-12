@@ -39,6 +39,16 @@ const PHASE =
   /(^|[\s_.-])(l[1-3]|phase[\s_-]?[1-3abc]|fase[\s_-]?[1-3]|faz[\s_-]?[1-3])([\s_.-]|$)/i;
 
 /**
+ * A forecast is not a reading: Solcast and friends name their sensors "… forecast", and their numbers are still to
+ * come. Their device is often named for the day ("今天的总发电量"), so the words alone cannot tell them apart.
+ */
+const FORECAST =
+  /(forecast|prognose|prognoz|prognóz|прогноз|previsi[oó]n|pr[eé]vision|previsto|voorspelling|verwachting|予測|예측|預測|预测)/i;
+
+/** A day's own counter in Chinese and Japanese: "日发电总量" says today without the word 今天. */
+const DAILY = /(日发电|日發電|日発電|日发电量|日發電量|日発電量)/;
+
+/**
  * Every source of a kind the energy preferences give a power sensor the house has, in their order: each with its own
  * sign, and its own charge where it states one.
  */
@@ -69,7 +79,9 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
   );
   const saying = (list: readonly string[], said: Role): string[] =>
     list.filter((id) => role.get(id) === said);
-  const solarWords = saying(powers, 'solar').slice(0, 1);
+  const solarWords = saying(powers, 'solar')
+    .filter((id) => !FORECAST.test(home.label(id)) && !FORECAST.test(id))
+    .slice(0, 1);
   const solarPowers = solarPrefs.length
     ? solarPrefs
     : solarWords.map((id) => ({ id, inverted: false }));
@@ -97,7 +109,28 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
   const taken = [...arrays, gridPower, ...batteryPowers.map((p) => p.id)];
   const charger = saying(powers, 'charger').find((id) => !taken.includes(id));
   const homePower = saying(powers, 'home').find((id) => !taken.includes(id));
+  // Today's production, in this order: the meter the energy dashboard records production from (a cumulative one:
+  // the cards take the day's gain from its statistics), a daily counter the words name, and only then a forecast,
+  // which is what the cards draw when a house has one but no meter of its own.
+  const solarMeters = house.sources
+    .filter((s) => s.kind === 'solar')
+    .flatMap((s) => s.energyIn)
+    .filter((id) => home.hasState(id) && !FORECAST.test(home.label(id)));
+  // A day's counter need not say "solar" in words the solar rules know — "MPPT 日发电总量" is a day counter named in
+  // Chinese, and the rules only carry 発電 — so readings the words leave without a role count too, after the solar ones.
+  const dayCounter = (id: string): boolean =>
+    !FORECAST.test(home.label(id)) &&
+    !FORECAST.test(id) &&
+    (TODAY.test(home.label(id)) || DAILY.test(home.label(id)));
+  const daily = [
+    ...energies.filter((id) => role.get(id) === 'solar' && dayCounter(id)),
+    ...energies.filter((id) => !role.get(id) && dayCounter(id)),
+  ];
+  const reading = (id: string): boolean => Number.isFinite(Number.parseFloat(home.state(id) ?? ''));
   const solarToday =
+    solarMeters.find(reading) ??
+    daily.find(reading) ??
+    daily[0] ??
     saying(energies, 'solar').find((id) => TODAY.test(home.label(id))) ??
     house.sources.find((s) => s.kind === 'solar')?.energyIn[0];
   const consumption = (prefs?.device_consumption ?? [])
