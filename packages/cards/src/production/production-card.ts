@@ -558,6 +558,9 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
           ? sum(forecast)
           : null;
 
+    // the forecast readout follows the pointer too: the hour's forecast while one is held, the day's otherwise
+    const hourForecast = hovered !== null && forecast ? (forecast[hovered] ?? 0) : null;
+
     // like against like: what came in against what was forecast up to this very minute
     const expected = forecast
       ? sum(forecast.slice(0, hourNow)) + (forecast[hourNow] ?? 0) * (minutes / 60)
@@ -705,7 +708,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
               ${
                 forecastShown && forecastTotal !== null
                   ? html`<div class="so-top__side">
-                      ${readout({ label: strings(this.hass, 'forecast'), value: shown(forecastTotal), unit: scale.unit, size: 's' })}
+                      ${readout({ label: strings(this.hass, 'forecast'), value: shown(hourForecast ?? forecastTotal), unit: scale.unit, size: 's' })}
                     </div>`
                   : nothing
               }
