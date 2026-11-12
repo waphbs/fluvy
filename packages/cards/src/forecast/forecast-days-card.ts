@@ -8,8 +8,23 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 import { head, readout, sheetStyles } from '@fluvy/ui';
-import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
+import { css, html, nothing, svg, type CSSResultGroup, type TemplateResult } from 'lit';
 
+import {
+  AXIS_GAP,
+  barGeometry,
+  barPath,
+  chartStyles,
+  gridLines,
+  labelled,
+  labelsApart,
+  niceTicks,
+  thinStep,
+  tickLabels,
+  UNIT_COLUMN,
+  unitLabel,
+  type Placed,
+} from '../chart/engine/index.js';
 import { HeadFit } from '../energy/head.js';
 import { houseMidnight } from '../energy-model/period.js';
 import { hourlyForecast } from '../production/forecast.js';
@@ -20,6 +35,11 @@ import { statsRow, type StatText } from '../shared/readouts.js';
 const HOUR = 3_600_000;
 const MAX_DAYS = 14;
 const KWH: Readonly<Record<string, number>> = { Wh: 0.001, kWh: 1, MWh: 1000, GJ: 277.778 };
+
+/** The chart's measures, the seven-day bars' own (the two cards read alike at the same width). */
+const PLOT = 132;
+const VALUES = 16;
+const DATES = 22;
 
 /** A day of the days ahead: the house's day at noon, and the forecast it comes to (null when none reaches it). */
 interface AheadDay {
@@ -41,68 +61,68 @@ const sum = (list: readonly number[]): number => list.reduce((total, value) => t
 
 /**
  * The days ahead, day by day: each day's forecast as a bar, from the sensors that state a day's hours
- * (`detailHourly`, `wh_hours`, `hourly`, …). A sensor covers the day it names, so a house with today's and
- * tomorrow's sensors sees two bars — more sensors, or an integration that states a week, fills the rest.
+ * (`detailHourly`, `wh_hours`, `hourly`, …) or a day's total. A sensor covers the day it names, so a house with
+ * today's and tomorrow's sensors sees two bars — more sensors, or an integration that states a week, fills the rest.
+ *
+ * The bars are drawn by the chart engine, the way the seven days behind are: a nice scale with its unit, dashed
+ * gridlines, the day's figure over each bar and the dates under them, thinned to what the row holds.
  */
 export class FluvyForecastDaysCard extends Card<ForecastDaysCardConfig> {
   static override layoutHeight(): number {
-    return 300;
+    return 316;
   }
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.solar,
+    chartStyles,
     css`
       .fd-body {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 4px;
         padding: 0 16px 16px;
       }
-      .fd-plot {
-        display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: minmax(0, 1fr);
-        align-items: end;
-        gap: 4px;
-        height: 132px;
+      .fd-chart {
+        --ink: var(--tone-ink, var(--fluvy-accent));
+        position: relative;
+        margin-top: 12px;
+        touch-action: pan-y;
       }
-      .fd-col {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 4px;
-        min-width: 0;
-        height: 100%;
-      }
-      .fd-value {
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--fluvy-text-secondary);
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-        min-height: 14px;
+      .fd-chart > svg {
+        display: block;
+        overflow: visible;
       }
       .fd-bar {
-        width: 100%;
-        max-width: 26px;
-        border-radius: 3px 3px 0 0;
-        background: var(--tone-ink, var(--fluvy-state-energy-solar));
-        min-height: 2px;
+        fill: var(--hb-fill);
+        transform-box: fill-box;
+        transform-origin: 50% 100%;
+        animation: fv-grow-y 560ms var(--fv-ease-out) both;
+        animation-delay: calc(var(--fv-enter-delay, 0ms) + var(--bar-delay, 0ms));
       }
-      .fd-col.is-empty .fd-bar {
-        background: color-mix(in srgb, var(--fluvy-text-secondary) 22%, transparent);
-        max-width: 14px;
-        height: 2px !important;
+      .fd-bar.is-empty {
+        fill: var(--ink);
+        opacity: 0.25;
+        animation: none;
+      }
+      .fd-value {
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 16px;
+        fill: var(--fluvy-text);
+        color: var(--fluvy-text);
+        font-variant-numeric: tabular-nums;
       }
       .fd-date {
-        font-size: 10px;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 16px;
+        fill: var(--fluvy-text-secondary);
         color: var(--fluvy-text-secondary);
         font-variant-numeric: tabular-nums;
-        white-space: nowrap;
       }
       .fd-none {
+        margin-top: 16px;
         font-size: 13px;
         color: var(--fluvy-text-secondary);
       }
@@ -198,6 +218,90 @@ export class FluvyForecastDaysCard extends Card<ForecastDaysCardConfig> {
     return days;
   }
 
+  /**
+   * The bars, drawn as the seven days behind are: a nice scale with its unit beside it and dashed gridlines across,
+   * each day's forecast over its bar and the dates under them thinned to what the row holds.
+   */
+  private renderBars(days: readonly AheadDay[], unit: string): TemplateResult {
+    const width = this.contentWidth;
+    const values = days.map((day) => day.value);
+    const height = VALUES + PLOT + DATES;
+    const known = values.filter((v): v is number => v !== null);
+    const ticks = niceTicks(Math.min(0, ...known, 0), Math.max(0, ...known, 0));
+    const ruler = this.head.ruler;
+    const figure = (value: number, digits = ticks.decimals): string =>
+      formatNumber(this.hass as HomeAssistant, value, { digits });
+    const tickTexts = ticks.ticks.map((t) => figure(t));
+    const tickWidth = Math.max(0, ...tickTexts.map((t) => ruler.width('ax-tick', t)));
+    const inset = (unit ? UNIT_COLUMN : 0) + tickWidth + AXIS_GAP;
+    const plotWidth = Math.max(1, width - inset);
+    const count = days.length;
+    const { slot, bar, radius } = barGeometry(count, plotWidth);
+    const span = ticks.max - ticks.min;
+    const top = VALUES;
+    const y = (v: number): number =>
+      span > 0 ? top + PLOT - ((v - ticks.min) / span) * PLOT : top + PLOT;
+    const zero = y(0);
+    const clampedX = (cx: number, textWidth: number): string => {
+      const half = textWidth / 2;
+      return Math.max(inset + half, Math.min(width - half, cx)).toFixed(1);
+    };
+
+    // a day's figure over its bar, where the slot holds it
+    const valueTexts = values.map((v) => (v === null ? '' : figure(v, 0)));
+    const valuesHold =
+      Math.max(0, ...valueTexts.map((t) => ruler.width('fd-value', t))) <= slot - 2;
+    // the dates thinned to what the row holds
+    const dateTexts = days.map((day) => day.label);
+    const dateWidths = dateTexts.map((t) => ruler.width('fd-date', t));
+    let dateStep = thinStep(Math.max(0, ...dateWidths), slot);
+    let dated = labelled(count, dateStep);
+    const placedDates = (): Placed[] =>
+      dated.flatMap((on, i) =>
+        on
+          ? [
+              {
+                x: Number(clampedX(inset + i * slot + slot / 2, dateWidths[i] ?? 0)),
+                width: dateWidths[i] ?? 0,
+              },
+            ]
+          : [],
+      );
+    while (dateStep < count && !labelsApart(placedDates())) dated = labelled(count, ++dateStep);
+    const dateY = top + PLOT + 8 + 12;
+
+    const drawn = days.map((_day, i) => {
+      const v = values[i] ?? null;
+      const cx = inset + i * slot + slot / 2;
+      const x = (cx - bar / 2).toFixed(1);
+      const empty = v === null || v <= 0 || span === 0;
+      const tall = empty ? 0 : Math.max(2, Math.round(Math.abs(y(v) - zero)));
+      const rect = empty
+        ? svg`<rect class="fd-bar is-empty" x=${x} y=${(zero - 2).toFixed(1)} width=${bar} height="2" rx=${Math.min(1, radius)}></rect>`
+        : svg`<path class="fd-bar" d=${barPath(cx - bar / 2, zero - tall, bar, tall, radius, 'top')} style="--bar-delay:${i * 18}ms"></path>`;
+      const label =
+        valuesHold && !empty
+          ? svg`<text class="fd-value" x=${clampedX(cx, ruler.width('fd-value', valueTexts[i] ?? ''))} y=${zero - tall - 4} text-anchor="middle">${valueTexts[i]}</text>`
+          : nothing;
+      const date = dated[i]
+        ? svg`<text class="fd-date" x=${clampedX(cx, dateWidths[i] ?? 0)} y=${dateY} text-anchor="middle">${dateTexts[i]}</text>`
+        : nothing;
+      return svg`${rect}${label}${date}`;
+    });
+
+    const grid = gridLines(ticks.ticks.map(y), inset, width, 'ax-grid');
+    const axis = svg`${tickLabels(
+      ticks.ticks.map((t, i) => [y(t), tickTexts[i] ?? ''] as const),
+      inset - AXIS_GAP,
+    )}${unit ? unitLabel(unit, top, top + PLOT) : nothing}`;
+
+    return html`<div class="fd-chart">
+      <svg width=${width} height=${height} viewBox="0 0 ${width} ${height}" data-measure="drawn">
+        <g style="--hb-fill:var(--ink)">${grid}${axis}${drawn}</g>
+      </svg>
+    </div>`;
+  }
+
   protected renderCard(): TemplateResult {
     const hass = this.hass as HomeAssistant | undefined;
     const days = this.ahead();
@@ -210,11 +314,6 @@ export class FluvyForecastDaysCard extends Card<ForecastDaysCardConfig> {
     const fitted = this.head.fit({ width: this.contentWidth, title, sub });
 
     const ceiling = Math.max(...known.map((day) => day.value ?? 0), 0);
-    const height = (value: number | null): string =>
-      value === null || ceiling <= 0
-        ? '0%'
-        : `${Math.max(2, Math.min(100, (value / ceiling) * 100))}%`;
-
     const stats: StatText[] = [
       {
         label: this.t('forecast.days_total'),
@@ -236,17 +335,7 @@ export class FluvyForecastDaysCard extends Card<ForecastDaysCardConfig> {
 
     const body = known.length
       ? html`
-          <div class="fd-plot">
-            ${days.map(
-              (day, index) => html`<div class="fd-col ${day.value === null ? 'is-empty' : ''}">
-                <span class="fd-value">${day.value === null ? '' : figure(day.value, 0)}</span>
-                <span class="fd-bar" style="height:${height(day.value)}"></span>
-                <span class="fd-date"
-                  >${index % 2 === 0 || index === days.length - 1 ? day.label : ''}</span
-                >
-              </div>`,
-            )}
-          </div>
+          ${this.renderBars(days, 'kWh')}
           <div
             class="so-cols fv-cols ${row.odd ? 'fv-cols--odd' : ''}"
             style="grid-template-columns:repeat(${row.columns}, minmax(0, 1fr))"
