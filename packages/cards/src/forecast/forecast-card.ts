@@ -7,12 +7,11 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 import { head } from '@fluvy/ui';
-import { css, html, nothing, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
+import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { HeadFit } from '../energy/head.js';
 import { houseMidnight } from '../energy-model/period.js';
 import { hourlyForecast } from '../production/forecast.js';
-import { houseDay, loadDay, type DayRecord } from '../production/day.js';
 import { Card, type BaseKey } from '../shared/base.js';
 import { configKeys } from '../shared/config.js';
 
@@ -30,35 +29,28 @@ interface DayForecast {
 export interface ForecastCardConfig extends FluvyCardConfig {
   title?: string;
   subtitle?: string;
-  /** Today's forecast sensor: its state is the day's total, its attributes the hours (Solcast and friends). */
+  /** Today's forecast sensor — kept so a strategy that passes it stays valid; the card draws tomorrow. */
   entity?: string;
-  /** Tomorrow's forecast sensor, drawn as the row under today's chart. */
+  /** Tomorrow's forecast sensor: its state is the day's total, its attributes the hours (Solcast and friends). */
   tomorrow?: string;
-  /** Today's production meter: what it gained so far, against the forecast. */
+  /** Kept for older configs; tomorrow's forecast needs no meter. */
   actual?: string;
 }
 
 const KWH: Readonly<Record<string, number>> = { Wh: 0.001, kWh: 1, MWh: 1000, GJ: 277.778 };
 
 const sum = (list: readonly number[]): number => list.reduce((total, value) => total + value, 0);
-/** The hour of the house's day an instant falls in. */
-const hourOf = (hass: HomeAssistant | undefined, at: Date): number => {
-  const wall = new Date(at.getTime());
-  return Number(
-    new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hour12: false, timeZone: houseZone(hass) })
-      .format(wall)
-      .replace(/[^0-9]/g, ''),
-  );
-};
 
 /**
- * The sun's day, forecast against what came in: today's hourly forecast and the meter's gain beside it, the day's
- * total in the head, and tomorrow as a row under them — a card for a house whose forecast integration (Solcast,
- * Open-Meteo Solar, a template) states a day's total and its hours.
+ * Tomorrow, and only tomorrow: the day's total, its peak hour, and the shape of the day as 24 bars — a card for a
+ * house whose forecast integration (Solcast, Open-Meteo Solar, a template) states a day's total and its hours.
+ *
+ * Today's forecast is already drawn by the production card, next to the meter's actual gain, so this card leaves it
+ * out instead of saying the same numbers twice.
  */
 export class FluvyForecastCard extends Card<ForecastCardConfig> {
   static override layoutHeight(): number {
-    return 292;
+    return 176;
   }
 
   static override styles: CSSResultGroup = [
@@ -73,10 +65,10 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
       .fc-total {
         display: flex;
         align-items: baseline;
-        gap: 6px;
+        gap: 8px;
       }
       .fc-total .fc-value {
-        font-size: 32px;
+        font-size: 28px;
         font-weight: 650;
         line-height: 1;
         font-variant-numeric: tabular-nums;
@@ -85,7 +77,8 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
         font-size: 13px;
         color: var(--fluvy-text-secondary);
       }
-      .fc-meta {
+      .fc-peak {
+        margin-inline-start: auto;
         font-size: 12px;
         color: var(--fluvy-text-secondary);
         font-variant-numeric: tabular-nums;
@@ -96,7 +89,7 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
         grid-auto-columns: minmax(0, 1fr);
         align-items: end;
         gap: 2px;
-        height: 84px;
+        height: 44px;
       }
       .fc-col {
         display: flex;
@@ -110,9 +103,6 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
         min-width: 0;
         border-radius: 2px 2px 0 0;
       }
-      .fc-act {
-        background: var(--tone-ink, var(--fluvy-state-energy-solar));
-      }
       .fc-fc {
         background: color-mix(in srgb, var(--tone-ink, var(--fluvy-state-energy-solar)) 26%, transparent);
       }
@@ -121,32 +111,6 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
         justify-content: space-between;
         font-size: 11px;
         color: var(--fluvy-text-secondary);
-      }
-      .fc-tomorrow {
-        display: flex;
-        align-items: baseline;
-        gap: 8px;
-        border-top: 1px solid var(--fluvy-divider, var(--fill-2));
-        padding-top: 8px;
-      }
-      .fc-label {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--fluvy-text-secondary);
-      }
-      .fc-tomorrow .fc-value {
-        font-size: 20px;
-        font-weight: 650;
-        font-variant-numeric: tabular-nums;
-      }
-      .fc-peak {
-        margin-inline-start: auto;
-        font-size: 12px;
-        color: var(--fluvy-text-secondary);
-        font-variant-numeric: tabular-nums;
-      }
-      .fc-plot--tomorrow {
-        height: 44px;
       }
       .fc-none {
         font-size: 13px;
@@ -169,34 +133,10 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
   ];
   static override keys = configKeys<ForecastCardConfig>()(['title', 'subtitle', 'tomorrow', 'actual']);
   private readonly head = new HeadFit(this);
-  /** Today's meter, hour by hour: read once a day (the recorder), then again when the day turns. */
-  private day: DayRecord | null | undefined = undefined;
-  private readFor = '';
-
-  protected override willUpdate(changed: PropertyValues): void {
-    super.willUpdate(changed);
-    const meter = this.config?.actual;
-    const now = new Date();
-    const key = meter ? `${meter}@${houseDay(this.hass, now)}` : '';
-    if (!meter || key === this.readFor) return;
-    this.readFor = key;
-    this.day = undefined;
-    const view = this.entity(meter);
-    void loadDay(this.hass as HomeAssistant, meter, view.unit, now)
-      .then((record) => {
-        this.day = record;
-        this.requestUpdate();
-      })
-      .catch(() => {
-        this.day = null;
-        this.requestUpdate();
-      });
-  }
 
   protected override watched(): readonly string[] {
-    return [this.config?.entity ?? '', this.config?.tomorrow ?? '', this.config?.actual ?? ''].filter(
-      (id) => id !== '',
-    );
+    const id = this.config?.tomorrow ?? '';
+    return id === '' ? [] : [id];
   }
 
   override getGridOptions(): LovelaceGridOptions {
@@ -207,7 +147,7 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
     return Math.ceil(FluvyForecastCard.layoutHeight() / 50);
   }
 
-  /** Today's or tomorrow's forecast, in kWh. */
+  /** Tomorrow's forecast, in kWh. */
   private forecastOf(id: string | undefined, dayOffset: number): DayForecast | null {
     if (!id) return null;
     const view = this.entity(id);
@@ -224,40 +164,13 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
     return { total: total ?? (hours ? sum(hours) : null), hours, unit: 'kWh' };
   }
 
-  /** The meter's gain so far today, in kWh, hour by hour. */
-  private measured(view: string): { total: number; hours: readonly number[] } | null {
-    if (!view) return null;
-    const meter = this.entity(view);
-    const factor = KWH[meter.unit];
-    const record = this.day;
-    if (record === undefined) return null;
-    const hours = new Array<number>(HOURS).fill(0);
-    if (record) {
-      record.hours.forEach((value, hour) => {
-        hours[hour] = Math.max(0, value ?? 0) * (factor ?? 0);
-      });
-      const hourNow = hourOf(this.hass, new Date());
-      if (record.baseline !== null && meter.number !== null && factor !== undefined) {
-        const gain = meter.number - record.baseline;
-        hours[hourNow] = (hours[hourNow] ?? 0) + (gain >= 0 ? gain : Math.max(0, meter.number)) * factor;
-      }
-    }
-    return { total: sum(hours), hours };
-  }
-
-  private plot(
-    measuredHours: readonly number[] | null,
-    forecastHours: readonly number[] | null,
-    ceiling: number,
-    cls = '',
-  ): TemplateResult {
+  private plot(forecastHours: readonly number[] | null, ceiling: number): TemplateResult {
     const height = (value: number | undefined): string =>
       ceiling > 0 && value !== undefined ? `${Math.max(0, Math.min(100, (value / ceiling) * 100))}%` : '0%';
-    return html`<div class="fc-plot ${cls}">
+    return html`<div class="fc-plot">
       ${Array.from(
         { length: HOURS },
         (_unused, hour) => html`<div class="fc-col">
-          <span class="fc-act" style="height:${height(measuredHours?.[hour])}"></span>
           <span class="fc-fc" style="height:${height(forecastHours?.[hour])}"></span>
         </div>`,
       )}
@@ -265,50 +178,32 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
   }
 
   protected renderCard(): TemplateResult {
-    const today = this.forecastOf(this.config?.entity, 0);
     const tomorrow = this.forecastOf(this.config?.tomorrow, 1);
-    const measured = this.config?.actual ? this.measured(this.config.actual) : null;
-    const ceiling = Math.max(0, ...(today?.hours ?? []), ...(measured?.hours ?? []));
 
     const title = this.config?.title ?? this.t('forecast.title');
-    const sub = this.config?.subtitle ?? this.t('forecast.today');
+    const sub = this.config?.subtitle ?? this.t('forecast.tomorrow');
     const fitted = this.head.fit({ width: this.contentWidth, title, sub });
 
     const figure = (value: number, digits = 1): string =>
       formatNumber(this.hass as HomeAssistant, value, { digits });
-    const done =
-      measured && today?.total && today.total > 0
-        ? Math.round((measured.total / today.total) * 100)
-        : null;
     const peak = tomorrow?.hours ? Math.max(...tomorrow.hours) : null;
     const peakHour =
       tomorrow?.hours && peak !== null && peak > 0 ? tomorrow.hours.indexOf(peak) : null;
+    const ceiling = Math.max(peak ?? 0, 0);
 
-    const body = today
+    const body = tomorrow
       ? html`
           <div class="fc-total">
-            <span class="fc-value">${figure(measured?.total ?? today.total ?? 0)}</span>
-            <span class="fc-unit">kWh · ${measured ? this.t('forecast.actual') : this.t('forecast.expected')}</span>
+            <span class="fc-value">${figure(tomorrow.total ?? 0)}</span>
+            <span class="fc-unit">kWh</span>
+            ${peak !== null && peakHour !== null
+              ? html`<span class="fc-peak"
+                  >${this.t('forecast.peak')} ${figure(peak)} kW · ${String(peakHour).padStart(2, '0')}:00</span
+                >`
+              : nothing}
           </div>
-          <div class="fc-meta">
-            ${this.t('forecast.expected')} ${figure(today.total ?? 0)} kWh${done !== null
-              ? ` · ${done}% ${this.t('forecast.of_forecast')}`
-              : ''}
-          </div>
-          ${this.plot(measured?.hours ?? null, today.hours, ceiling)}
+          ${this.plot(tomorrow.hours, ceiling)}
           <div class="fc-axis"><span>00:00</span><span>12:00</span><span>24:00</span></div>
-          ${tomorrow
-            ? html`<div class="fc-tomorrow">
-                <span class="fc-label">${this.t('forecast.tomorrow')}</span>
-                <span class="fc-value">${figure(tomorrow.total ?? 0)} kWh</span>
-                ${peak !== null && peakHour !== null
-                  ? html`<span class="fc-peak"
-                      >${this.t('forecast.peak')} ${figure(peak)} kW · ${String(peakHour).padStart(2, '0')}:00</span
-                    >`
-                  : nothing}
-              </div>
-              ${this.plot(null, tomorrow.hours, Math.max(peak ?? 0, 0), 'fc-plot--tomorrow')}`
-            : nothing}
         `
       : html`<div class="fc-none">${this.t('forecast.none')}</div>`;
 
@@ -326,19 +221,11 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
   }
 
   static override getConfigForm(): LovelaceConfigForm {
-    // the config's own fields are enough for this card's editor: entity, tomorrow, actual and the head's words
+    // the config's own fields are enough for this card's editor: tomorrow's sensor and the head's words
     return {
       schema: [
         {
-          name: 'entity',
-          selector: { entity: { domain: ['sensor'] } },
-        },
-        {
           name: 'tomorrow',
-          selector: { entity: { domain: ['sensor'] } },
-        },
-        {
-          name: 'actual',
           selector: { entity: { domain: ['sensor'] } },
         },
       ],

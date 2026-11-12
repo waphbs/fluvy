@@ -167,9 +167,7 @@ function productionView(ctx: StrategyContext): Section[] {
     ]),
     ...when(solarForecastTomorrow, (id) => [
       full('forecast', {
-        entity: solarForecast ?? id,
         tomorrow: id,
-        ...(solarToday ? { actual: solarToday } : {}),
       }),
     ]),
     ...when(solarToday, (id) => [full('history-bars', { entity: id, color: 'amber' })]),
