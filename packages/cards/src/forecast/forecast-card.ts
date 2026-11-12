@@ -68,26 +68,14 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
         gap: 8px;
         padding: 0 16px 16px;
       }
-      .fc-total {
-        display: flex;
-        align-items: baseline;
-        gap: 8px;
-      }
-      .fc-total .fc-value {
-        font-size: 40px;
-        font-weight: 650;
-        line-height: 1;
-        font-variant-numeric: tabular-nums;
-      }
-      .fc-total .fc-unit {
-        font-size: 14px;
-        color: var(--fluvy-text-secondary);
-      }
-      .fc-peak {
+      .fc-when {
         margin-inline-start: auto;
+        align-self: flex-end;
+        padding-block-end: 6px;
         font-size: 12px;
         color: var(--fluvy-text-secondary);
         font-variant-numeric: tabular-nums;
+        white-space: nowrap;
       }
       .fc-plot {
         display: grid;
@@ -171,6 +159,13 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
 
   private get hour12(): boolean {
     return clock12(this.hass);
+  }
+
+  /** The day this card draws, as the house writes a date: "11月13日" or "Nov 13". */
+  private dayLabel(): string {
+    const hass = this.hass as HomeAssistant | undefined;
+    const at = new Date(houseMidnight(hass as HomeAssistant, new Date()).getTime() + 24 * HOUR + 12 * HOUR);
+    return dateFormat(hass?.language ?? 'en', { month: 'short', day: 'numeric' }).format(at);
   }
 
   /** "12:00" on a 24 h clock, "12 PM" on a 12 h one: the same words the production card's axis uses. */
@@ -275,14 +270,21 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
           ];
           const row = statsRow(this.head.ruler, this.contentWidth, stats);
           return html`
-            <div class="fc-total">
-              <span class="fc-value">${figure(shown)}</span>
-              <span class="fc-unit">kWh</span>
+            <div class="fc-top fv-value-row">
               ${hour !== null
-                ? html`<span class="fc-peak"
-                    >${this.hourLabel(hour)} – ${this.hourLabel(hour + 1)}</span
-                  >`
-                : nothing}
+                ? readout({
+                    label: `${this.hourLabel(hour)} – ${this.hourLabel(hour + 1)}`,
+                    value: figure(shown),
+                    unit: 'kWh',
+                    size: this.contentWidth < AXIS_FULL ? 'm' : 'l',
+                  })
+                : readout({
+                    label: this.t('forecast.expected'),
+                    value: figure(shown),
+                    unit: 'kWh',
+                    size: this.contentWidth < AXIS_FULL ? 'm' : 'l',
+                  })}
+              <span class="fc-when">${this.dayLabel()}</span>
             </div>
             ${this.plot(tomorrow.hours, ceiling)}
             ${axis(this.contentWidth < AXIS_FULL ? narrowTicks : ticks)}
