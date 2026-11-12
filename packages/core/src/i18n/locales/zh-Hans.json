@@ -2999,7 +2999,7 @@
   "forecast": {
     "title": "发电预报",
     "today": "今天",
-    "tomorrow": "明天",
+    "tomorrow": "明日预测",
     "expected": "预计",
     "actual": "至今实测",
     "of_forecast": "占预计",
