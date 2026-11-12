@@ -3014,6 +3014,7 @@
     "days_total": "合计",
     "days_average": "日均",
     "days_best": "最好",
-    "days_none": "还没有未来几天的预报"
+    "days_none": "还没有未来几天的预报",
+    "days_worst": "最低"
   }
 }

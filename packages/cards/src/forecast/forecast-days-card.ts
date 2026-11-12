@@ -105,6 +105,14 @@ export class FluvyForecastDaysCard extends Card<ForecastDaysCardConfig> {
         min-height: 44px;
         margin-top: 8px;
       }
+      .fd-reading--pair {
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .fd-reading--pair > * {
+        flex: 1 1 0;
+        min-width: 0;
+      }
       .fd-chart > svg {
         display: block;
         overflow: visible;
@@ -365,10 +373,16 @@ export class FluvyForecastDaysCard extends Card<ForecastDaysCardConfig> {
     const fitted = this.head.fit({ width: this.contentWidth, title, sub });
 
     const ceiling = Math.max(...known.map((day) => day.value ?? 0), 0);
+    const floor = known.length ? Math.min(...known.map((day) => day.value ?? 0)) : 0;
     const stats: StatText[] = [
       {
-        label: this.t('forecast.days_total'),
-        value: known.length ? figure(sum(known.map((day) => day.value ?? 0))) : '—',
+        label: this.t('forecast.days_best'),
+        value: known.length ? figure(ceiling) : '—',
+        unit: known.length ? 'kWh' : '',
+      },
+      {
+        label: this.t('forecast.days_worst'),
+        value: known.length ? figure(floor) : '—',
         unit: known.length ? 'kWh' : '',
       },
       {
@@ -376,14 +390,12 @@ export class FluvyForecastDaysCard extends Card<ForecastDaysCardConfig> {
         value: known.length ? figure(sum(known.map((day) => day.value ?? 0)) / known.length) : '—',
         unit: known.length ? 'kWh' : '',
       },
-      {
-        label: this.t('forecast.days_best'),
-        value: known.length ? figure(ceiling) : '—',
-        unit: known.length ? 'kWh' : '',
-      },
     ];
     const row = statsRow(this.head.ruler, this.contentWidth, stats);
     const under = this.hovered === null ? undefined : days[this.hovered];
+    const total = sum(known.map((day) => day.value ?? 0));
+    // the row over the chart: the week's own after all, the day under the pointer while it is held — the strip
+    // under the chart keeps the week's high, low and average either way
     const reading =
       under && under.value !== null
         ? html`<div class="fd-reading">
@@ -394,18 +406,26 @@ export class FluvyForecastDaysCard extends Card<ForecastDaysCardConfig> {
               size: 'm',
             })}
           </div>`
-        : nothing;
+        : html`<div class="fd-reading fd-reading--pair">
+            ${readout({ label: this.t('forecast.days_total'), value: figure(total), unit: 'kWh', size: 'm' })}
+            ${readout({
+              label: this.t('forecast.days_average'),
+              value: figure(known.length ? total / known.length : 0),
+              unit: 'kWh',
+              size: 'm',
+            })}
+          </div>`;
 
     const body = known.length
       ? html`
+          ${reading}
           ${this.renderBars(days, 'kWh')}
-          ${reading ??
-          html`<div
+          <div
             class="so-cols fv-cols ${row.odd ? 'fv-cols--odd' : ''}"
             style="grid-template-columns:repeat(${row.columns}, minmax(0, 1fr))"
           >
             ${stats.map((stat) => readout({ ...stat, size: row.size }))}
-          </div>`}
+          </div>
         `
       : html`<div class="fd-none">${this.t('forecast.days_none')}</div>`;
 

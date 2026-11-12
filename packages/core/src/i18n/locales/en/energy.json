@@ -311,6 +311,7 @@
     "days_total": "Total",
     "days_average": "Daily",
     "days_best": "Best",
-    "days_none": "No forecast for the days ahead yet"
+    "days_none": "No forecast for the days ahead yet",
+    "days_worst": "Lowest"
   }
 }
