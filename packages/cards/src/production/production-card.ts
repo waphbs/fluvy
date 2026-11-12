@@ -560,6 +560,12 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
 
     // the forecast readout follows the pointer too: the hour's forecast while one is held, the day's otherwise
     const hourForecast = hovered !== null && forecast ? (forecast[hovered] ?? 0) : null;
+    // …and so does the badge, for an hour that is already behind us: its own forecast against what it made. The hour
+    // in progress and the ones after it hold only part of an hour (or none), so those keep the day's comparison.
+    const hourDelta =
+      hovered !== null && hourForecast !== null && hourForecast > 0 && hovered < hourNow
+        ? Math.max(-9.99, Math.min(9.99, (produced[hovered] ?? 0) / hourForecast - 1))
+        : null;
 
     // like against like: what came in against what was forecast up to this very minute
     const expected = forecast
@@ -610,8 +616,10 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
 
     const narrow = this.contentWidth < NARROW;
     const forecastShown = !compact && forecastTotal !== null && forecastTotal > 0 && !narrow;
-    const fit = (versus: boolean, compared = true) =>
-      this.head.fit({
+    const fit = (versus: boolean, compared = true) => {
+      // pointing at a finished hour compares that hour with its own forecast; everywhere else the day keeps its count
+      const shownDelta = hourDelta ?? (compared ? delta : null);
+      return this.head.fit({
         width: this.contentWidth,
         title: name,
         sub:
@@ -619,13 +627,14 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
           (versus ? `${this.dayWords()} · ${strings(this.hass, 'vs_forecast')}` : this.dayWords()),
         badge: unusable
           ? { text: stateWord(this.hass, view), tone: 'off' }
-          : delta !== null && compared
+          : shownDelta !== null
             ? {
-                text: `${delta >= 0 ? '+' : '−'}${formatNumber(this.hass, Math.abs(delta) * 100, { digits: 0 })} %`,
-                tone: delta >= 0 ? tone : 'neutral',
+                text: `${shownDelta >= 0 ? '+' : '−'}${formatNumber(this.hass, Math.abs(shownDelta) * 100, { digits: 0 })} %`,
+                tone: shownDelta >= 0 ? tone : 'neutral',
               }
             : null,
       });
+    };
     // "vs forecast" only while something is compared: the badge's delta or the forecast's own readout — and the
     // delta never comes back beside a plain "Today", which would not say what it compares
     let fitted = fit(forecastTotal !== null);
