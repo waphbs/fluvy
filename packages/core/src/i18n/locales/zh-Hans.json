@@ -3005,6 +3005,8 @@
     "of_forecast": "占预计",
     "peak": "峰值",
     "peak_at": "峰值时刻",
-    "none": "这一天没有预报"
+    "none": "这一天没有预报",
+    "sun_hours": "日照小时",
+    "hours_unit": "小时"
   }
 }
