@@ -194,6 +194,10 @@ export interface EnergyRoles {
   /** The grid meter came from the energy dashboard's preferences, with its sign: nothing left to find out. */
   readonly gridSigned: boolean;
   readonly solarToday: string | undefined;
+  /** Today's forecast of the sun's day (its state the total, its attributes the hours): what the production draws behind. */
+  readonly solarForecast: string | undefined;
+  /** Tomorrow's forecast, drawn as the row under today's forecast chart. */
+  readonly solarForecastTomorrow: string | undefined;
   /** The energy dashboard's devices (their energy statistics) and the power sensor beside each. */
   readonly consumption: readonly string[];
   readonly consumptionPowers: readonly string[];

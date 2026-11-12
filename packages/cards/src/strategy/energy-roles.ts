@@ -106,6 +106,32 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
   const solarToday =
     house.sources.find((s) => s.kind === 'solar')?.energyIn.find((id) => home.hasState(id)) ??
     saying(energies, 'solar').find((id) => TODAY.test(home.label(id)));
+  // The day's forecast: Solcast and friends state a day's total and carry its hours as an attribute. Their device is
+  // named for the day, so every sensor of it says "today": the day's total is the reading whose attributes carry the
+  // hours — never the sensors of the hour at hand, the rest of the day, a peak or the API's own counters.
+  const FORECAST_SKIP =
+    /(剩余|当前|小时|功率|峰值|高峰|api|limit|polled|hard\s*limit|今天总发电量-预测\s*home)/i;
+  const FORECAST_SKIP_ID =
+    /(_sheng_yu|_dang_qian|_1xiao_shi|_gong_lu|_gao_feng|_api_|_hard_limit|_home|_30fen_zhong|_1xiao_shi_hou)/i;
+  const HOURY = ['detailedHourly', 'detailedForecast', 'wh_period', 'wh_hours', 'hourly', 'forecast'];
+  const DAY_WORDS = /(日发电|日發電|日発電|日发电量|日發電量|日発電量)/;
+  const forecastReading = (id: string): boolean =>
+    (FORECAST.test(home.label(id)) || FORECAST.test(id) || home.forecast(id)) &&
+    !FORECAST_SKIP.test(home.label(id)) &&
+    !FORECAST_SKIP_ID.test(id) &&
+    home.hasState(id) &&
+    Number.isFinite(Number.parseFloat(home.state(id) ?? ''));
+  const forecastDay = (id: string): boolean =>
+    forecastReading(id) && HOURY.some((name) => home.hasAttr(id, name));
+  const TOMORROW =
+    /(明天|明日|tomorrow|morgen|mañana|demain|domani|jutro|amanh|내일|пер[её]д?завтра)/i;
+  const forecastDays = energies.filter(forecastDay);
+  const solarForecastTomorrow = forecastDays.find((id) => TOMORROW.test(home.label(id)));
+  const solarForecast = forecastDays.find(
+    (id) =>
+      id !== solarForecastTomorrow &&
+      (TODAY.test(home.label(id)) || DAY_WORDS.test(home.label(id))),
+  );
   const consumption = (prefs?.device_consumption ?? [])
     .map((d) => d.stat_consumption)
     .filter((id) => home.hasState(id));
@@ -134,6 +160,8 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
     gridInvert: gridPref?.inverted ?? false,
     gridSigned: gridPref !== undefined || gridPhases.length > 0,
     solarToday,
+    solarForecast,
+    solarForecastTomorrow,
     consumption,
     consumptionPowers,
     // the cards read the energy dashboard themselves when it carries the grid's power (or the house has no grid to

@@ -131,3 +131,45 @@ describe('findEnergyRoles — a forecast is not a reading (#170)', () => {
     expect(roles(house.slice(1), prefs).solarToday).toBe('sensor.pv_today');
   });
 });
+
+/** A forecast of a day: its total as the state, its hours in the attribute Solcast ships. */
+const dayForecast = (id: string, name: string, state: string) => {
+  const base = reading(id, name, state);
+  return {
+    ...base,
+    attributes: {
+      ...base.attributes,
+      detailedHourly: Array.from({ length: 24 }, (_unused, hour) =>
+        hour > 6 && hour < 19 ? 1 : 0,
+      ),
+    },
+  };
+};
+
+describe('findEnergyRoles — the sun’s forecast of a day', () => {
+  it('reads today’s forecast and tomorrow’s apart, by their names', () => {
+    const roles = house([
+      dayForecast('sensor.solcast_forecast_today', '今天总发电量-预测', '86.0'),
+      dayForecast('sensor.solcast_forecast_tomorrow', '明天总发电量-预测', '45.1'),
+    ]);
+    expect(roles.solarForecast).toBe('sensor.solcast_forecast_today');
+    expect(roles.solarForecastTomorrow).toBe('sensor.solcast_forecast_tomorrow');
+  });
+
+  it('never takes the hour at hand, the rest of the day or the peak', () => {
+    const roles = house([
+      dayForecast('sensor.solcast_forecast_hours', '当前1小时内发电量-预测', '13.3'),
+      dayForecast('sensor.solcast_remaining', '今日剩余发电量-预测', '30.5'),
+      dayForecast('sensor.solcast_peak', '今日峰值-预测', '13.6'),
+      dayForecast('sensor.solcast_forecast_today', '今天总发电量-预测', '86.0'),
+    ]);
+    expect(roles.solarForecast).toBe('sensor.solcast_forecast_today');
+  });
+
+  it('says nothing when the forecast carries no hours', () => {
+    const roles = house([
+      reading('sensor.solcast_forecast_today', '今天总发电量-预测', '86.0'),
+    ]);
+    expect(roles.solarForecast).toBeUndefined();
+  });
+});

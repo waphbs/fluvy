@@ -105,7 +105,7 @@ const ENERGY_PERIOD =
  * card again the moment its tag is defined, so a dashboard with energy on it shows it; one without never waits.
  */
 const ENERGY =
-  /\/packages\/(cards\/src\/(energy-cards\.ts|energy\/(?!head\.ts)|energy-flow\/|energy-model\/|energy-devices\/|production\/|history-bars\/|balance\/|grid\/|batteries\/|ev-charger\/|sankey\/|score\/|meters\/)|ui\/src\/styles\/(generated\/)?energy\.ts|core\/src\/i18n\/locales\/en\/energy\.json)/;
+  /\/packages\/(cards\/src\/(energy-cards\.ts|energy\/(?!head\.ts)|energy-flow\/|energy-model\/|energy-devices\/|forecast\/|production\/|history-bars\/|balance\/|grid\/|batteries\/|ev-charger\/|sankey\/|score\/|meters\/)|ui\/src\/styles\/(generated\/)?energy\.ts|core\/src\/i18n\/locales\/en\/energy\.json)/;
 
 /** The cameras' sheet: fetched the first time a Cameras card's round opens it, never by a dashboard that only shows them. */
 const CAMERAS_SHEET = /\/packages\/cards\/src\/camera\/sheet\//;

@@ -367,6 +367,10 @@ export class HomeRegistry {
   stateClass(id: string): string {
     return String(this.attr<string>(id, 'state_class') ?? '');
   }
+  /** Whether the entity's state carries an attribute of that name (a forecast's hours, a battery's capacity). */
+  hasAttr(id: string, name: string): boolean {
+    return this.attr<unknown>(id, name) !== undefined;
+  }
   /** The id and the name together, in ordinary width (a full-width "ＬＥＤ" reads as "LED"): what the word rules look at. */
   label(id: string): string {
     return `${id} ${this.name(id)}`.normalize('NFKC');

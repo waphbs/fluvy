@@ -43,6 +43,23 @@ const entity = (
 ): DemoEntity => ({ id, state, attributes, registry });
 /** The moment the appliances' fixtures are read at. */
 const APPLIANCES_AT = Date.parse('2026-09-17T19:47:00Z');
+/** A forecast integration of the sun (Solcast and friends): a day's total, and its hours in the attribute. */
+const solcast = (id: string, name: string, total: number): DemoEntity =>
+  entity(
+    id,
+    String(total),
+    {
+      friendly_name: name,
+      device_class: 'energy',
+      state_class: 'total',
+      unit_of_measurement: 'kWh',
+      detailedHourly: Array.from({ length: 24 }, (_unused, hour) =>
+        hour > 6 && hour < 19 ? Math.max(0, Math.sin((hour - 6) / 12) * 10) : 0,
+      ),
+    },
+    { platform: 'solcast_solar' },
+  );
+
 /** The demo home with one of everything the library has a card for, appliances large and small among them (#47). */
 const everything = () =>
   houseOf(
@@ -54,7 +71,12 @@ const everything = () =>
     ],
     APPLIANCES_AT,
     demoHass({
-      more: [...DEMO_EXTRAS, ...DEMO_ROOMS],
+      more: [
+        ...DEMO_EXTRAS,
+        ...DEMO_ROOMS,
+        solcast('sensor.solcast_forecast_today', '今天总发电量-预测', 86),
+        solcast('sensor.solcast_forecast_tomorrow', '明天总发电量-预测', 45),
+      ],
       consumption: ['sensor.washing_machine_energy_today', 'sensor.dryer_energy_today'],
       sources: DEMO_ENERGY_SOURCES,
     }) as unknown as Partial<HomeAssistant>,
