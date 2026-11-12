@@ -1,4 +1,6 @@
 import {
+  clock12,
+  dateFormat,
   formatNumber,
   houseZone,
   type FluvyCardConfig,
@@ -6,7 +8,7 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { head } from '@fluvy/ui';
+import { axis, head, readout, sheetStyles } from '@fluvy/ui';
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { HeadFit } from '../energy/head.js';
@@ -14,9 +16,12 @@ import { houseMidnight } from '../energy-model/period.js';
 import { hourlyForecast } from '../production/forecast.js';
 import { Card, type BaseKey } from '../shared/base.js';
 import { configKeys } from '../shared/config.js';
+import { statsRow, type StatText } from '../shared/readouts.js';
 
 const HOUR = 3_600_000;
 const HOURS = 24;
+/** Below this the axis keeps its first, middle and last hour, as the production card's does. */
+const AXIS_FULL = 240;
 
 /** A day's forecast: the total its state says, and its hours when its attributes carry them. */
 interface DayForecast {
@@ -55,6 +60,7 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
+    sheetStyles.solar,
     css`
       .fc-body {
         display: flex;
@@ -68,13 +74,13 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
         gap: 8px;
       }
       .fc-total .fc-value {
-        font-size: 28px;
+        font-size: 40px;
         font-weight: 650;
         line-height: 1;
         font-variant-numeric: tabular-nums;
       }
       .fc-total .fc-unit {
-        font-size: 13px;
+        font-size: 14px;
         color: var(--fluvy-text-secondary);
       }
       .fc-peak {
@@ -83,45 +89,13 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
         color: var(--fluvy-text-secondary);
         font-variant-numeric: tabular-nums;
       }
-      /* the same three facts the production card shows under today's bars */
-      .fc-stats {
-        display: flex;
-        justify-content: space-between;
-        gap: 8px;
-        font-variant-numeric: tabular-nums;
-      }
-      .fc-stat {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        min-width: 0;
-      }
-      .fc-stat + .fc-stat {
-        align-items: flex-end;
-      }
-      .fc-stat__label {
-        font-size: 11px;
-        color: var(--fluvy-text-secondary);
-        white-space: nowrap;
-      }
-      .fc-stat__value {
-        font-size: 16px;
-        font-weight: 600;
-        line-height: 1.2;
-      }
-      .fc-stat__unit {
-        margin-inline-start: 3px;
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--fluvy-text-secondary);
-      }
       .fc-plot {
         display: grid;
         grid-auto-flow: column;
         grid-auto-columns: minmax(0, 1fr);
         align-items: end;
         gap: 2px;
-        height: 44px;
+        height: 80px;
         cursor: crosshair;
         touch-action: pan-y;
       }
@@ -142,12 +116,6 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
       }
       .fc-fc.is-on {
         background: var(--tone-ink, var(--fluvy-state-energy-solar));
-      }
-      .fc-axis {
-        display: flex;
-        justify-content: space-between;
-        font-size: 11px;
-        color: var(--fluvy-text-secondary);
       }
       .fc-none {
         font-size: 13px;
@@ -199,6 +167,18 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
 
   override getCardSize(): number {
     return Math.ceil(FluvyForecastCard.layoutHeight() / 50);
+  }
+
+  private get hour12(): boolean {
+    return clock12(this.hass);
+  }
+
+  /** "12:00" on a 24 h clock, "12 PM" on a 12 h one: the same words the production card's axis uses. */
+  private hourLabel(hour: number): string {
+    if (!this.hour12) return `${String(hour).padStart(2, '0')}:00`;
+    return dateFormat(this.hass?.language ?? 'en', { hour: 'numeric', hour12: true }).format(
+      new Date(2026, 0, 1, hour % 24),
+    );
   }
 
   /** Tomorrow's forecast, in kWh. */
@@ -267,35 +247,53 @@ export class FluvyForecastCard extends Card<ForecastCardConfig> {
     const shown = hour !== null && tomorrow?.hours ? (tomorrow.hours[hour] ?? 0) : (tomorrow?.total ?? 0);
 
     const body = tomorrow
-      ? html`
-          <div class="fc-total">
-            <span class="fc-value">${figure(shown)}</span>
-            <span class="fc-unit">kWh</span>
-            ${hour !== null
-              ? html`<span class="fc-peak">${String(hour).padStart(2, '0')}:00 – ${String(hour + 1).padStart(2, '0')}:00</span>`
-              : nothing}
-          </div>
-          ${this.plot(tomorrow.hours, ceiling)}
-          <div class="fc-axis"><span>00:00</span><span>12:00</span><span>24:00</span></div>
-          <div class="fc-stats">
-            <div class="fc-stat">
-              <span class="fc-stat__label">${this.t('forecast.peak')}</span>
-              <span class="fc-stat__value">${peak !== null ? figure(peak) : '—'}<span class="fc-stat__unit">kWh</span></span>
+      ? (() => {
+          const lastHour = this.hour12 ? this.hourLabel(24) : '24:00';
+          const ticks: [number, string][] = [
+            [0, this.hourLabel(0)],
+            [6 / HOURS, this.hourLabel(6)],
+            [0.5, this.hourLabel(12)],
+            [18 / HOURS, this.hourLabel(18)],
+            [1, lastHour],
+          ];
+          const narrowTicks: [number, string][] = [
+            [0, this.hourLabel(0)],
+            [0.5, this.hourLabel(12)],
+            [1, lastHour],
+          ];
+          const stats: StatText[] = [
+            { label: this.t('forecast.peak'), value: peak !== null ? figure(peak) : '—', unit: 'kWh' },
+            {
+              label: this.t('forecast.peak_at'),
+              value: peakHour !== null ? this.hourLabel(peakHour) : '—',
+            },
+            {
+              label: this.t('forecast.sun_hours'),
+              value: sunHours !== null ? String(sunHours) : '—',
+              unit: sunHours !== null ? this.t('forecast.hours_unit') : '',
+            },
+          ];
+          const row = statsRow(this.head.ruler, this.contentWidth, stats);
+          return html`
+            <div class="fc-total">
+              <span class="fc-value">${figure(shown)}</span>
+              <span class="fc-unit">kWh</span>
+              ${hour !== null
+                ? html`<span class="fc-peak"
+                    >${this.hourLabel(hour)} – ${this.hourLabel(hour + 1)}</span
+                  >`
+                : nothing}
             </div>
-            <div class="fc-stat">
-              <span class="fc-stat__label">${this.t('forecast.peak_at')}</span>
-              <span class="fc-stat__value"
-                >${peakHour !== null ? `${String(peakHour).padStart(2, '0')}:00` : '—'}</span
-              >
+            ${this.plot(tomorrow.hours, ceiling)}
+            ${axis(this.contentWidth < AXIS_FULL ? narrowTicks : ticks)}
+            <div
+              class="so-cols fv-cols ${row.odd ? 'fv-cols--odd' : ''}"
+              style="grid-template-columns:repeat(${row.columns}, minmax(0, 1fr))"
+            >
+              ${stats.map((stat) => readout({ ...stat, size: row.size }))}
             </div>
-            <div class="fc-stat">
-              <span class="fc-stat__label">${this.t('forecast.sun_hours')}</span>
-              <span class="fc-stat__value"
-                >${sunHours !== null ? sunHours : '—'}<span class="fc-stat__unit">${this.t('forecast.hours_unit')}</span></span
-              >
-            </div>
-          </div>
-        `
+          `;
+        })()
       : html`<div class="fc-none">${this.t('forecast.none')}</div>`;
 
     return html`<article class="fv-card fc-card">
