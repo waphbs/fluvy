@@ -293,5 +293,16 @@
     "follows": "Follows the date picker",
     "editor_collection_key": "Follow a date picker",
     "editor_collection_key_help": "The key of an Energy date picker on this dashboard (Fluvy’s Energy period card or Home Assistant’s)"
+  },
+  "forecast": {
+    "title": "Solar forecast",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "expected": "Expected",
+    "actual": "So far",
+    "of_forecast": "of forecast",
+    "peak": "Peak",
+    "peak_at": "Peak at",
+    "none": "No forecast for this day"
   }
 }

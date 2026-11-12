@@ -533,6 +533,12 @@ export const ENERGY_FAMILY: readonly FamilyEntry[] = [
     productionHeight,
   ],
   [
+    'fluvy-forecast-card',
+    'Fluvy · Solar forecast',
+    'The sun’s day, forecast against what came in: today’s hourly forecast beside the meter’s gain, the day’s total and how much of it is in, and tomorrow under them.',
+    () => 292,
+  ],
+  [
     'fluvy-history-bars-card',
     'Fluvy · History bars',
     'A sensor’s last days, weeks or months as bars from its long-term statistics: the total and the average in the head, the value over each bar, and a strip of facts under them — the highest and lowest, or what it comes to in CO₂, trees, kilometres or money.',

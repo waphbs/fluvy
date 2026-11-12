@@ -754,11 +754,33 @@ const withAppliances = (base: Record<string, unknown> = demoHass() as never) =>
     base as Partial<HomeAssistant>,
   ) as never;
 
+/** A forecast integration of the sun: a day's total, and its hours in the attribute. */
+const solcast = (id: string, name: string, total: number): DemoEntity =>
+  entity(
+    id,
+    String(total),
+    {
+      friendly_name: name,
+      device_class: 'energy',
+      state_class: 'total',
+      unit_of_measurement: 'kWh',
+      detailedHourly: Array.from({ length: 24 }, (_unused, hour) =>
+        hour > 6 && hour < 19 ? Math.max(0, Math.sin((hour - 6) / 12) * 10) : 0,
+      ),
+    },
+    { platform: 'solcast_solar' },
+  );
+
 /** The demo home with one of everything the library has a card for. */
 const everything = () =>
   withAppliances(
     demoHass({
-      more: [...DEMO_EXTRAS, ...DEMO_ROOMS],
+      more: [
+        ...DEMO_EXTRAS,
+        ...DEMO_ROOMS,
+        solcast('sensor.solcast_forecast_today', '今天总发电量-预测', 86),
+        solcast('sensor.solcast_forecast_tomorrow', '明天总发电量-预测', 45),
+      ],
       consumption: ['sensor.washing_machine_energy_today', 'sensor.dryer_energy_today'],
       sources: DEMO_ENERGY_SOURCES,
     }) as never,
@@ -859,7 +881,8 @@ describe('custom:fluvy-home strategy', () => {
     // Energy usage card (#62) is the person's to place; so is the Slider card (#77): the dashboards set a player's
     // volume, a number and a fan on their own cards; and the Vehicle card (#84), a car being the person's to place;
     // and the remote card (#143): which television, which remote entity and which receiver its volume goes to are
-    // the person's to say, and a player's own card stands for a television on the dashboards
+    // the person's to say, and a player's own card stands for a television on the dashboards; the solar forecast card
+    // is the Energy dashboard's production view (1.19), and the home never draws the sun's forecast
     const byHand = new Set([
       'custom:fluvy-automations-card',
       'custom:fluvy-remote-card',
@@ -872,6 +895,7 @@ describe('custom:fluvy-home strategy', () => {
       'custom:fluvy-energy-usage-card',
       'custom:fluvy-slider-card',
       'custom:fluvy-vehicle-card',
+      'custom:fluvy-forecast-card',
     ]);
     expect(
       CATALOGUE.map(([tag]) => `custom:${tag}`).filter(

@@ -2992,5 +2992,16 @@
     "editor.activity_helper": "Android TV Remote 打开该应用的方式:netflix:// 这样的深层链接（可靠的方式）或应用 ID",
     "editor.commands": "此设备的命令",
     "editor.commands_helper": "按键及设备为其接受的命令，优先于表格（back: KEY_RETURN）"
+  },
+  "forecast": {
+    "title": "发电预报",
+    "today": "今天",
+    "tomorrow": "明天",
+    "expected": "预计",
+    "actual": "至今实测",
+    "of_forecast": "占预计",
+    "peak": "峰值",
+    "peak_at": "峰值时刻",
+    "none": "这一天没有预报"
   }
 }
