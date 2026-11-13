@@ -82,6 +82,7 @@ import {
   type Cubic,
   type Point,
   type RowsLayout,
+  WRAP_LABEL,
   type WayMode,
   type WordsWidth,
 } from './geometry.js';
@@ -277,6 +278,14 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       .en-list__row .en-words__label {
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      .en-words__label.is-wrap {
+        display: block;
+        height: auto;
+        max-height: 30px;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 14px;
       }
     `,
   ];
@@ -829,6 +838,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
 
   /** A figure's line with its way said `as`: beside the figure, on the line under it, or by its glyph. */
   private saidWidth(l: Line, as: WayMode): number {
+    if (as === 'wrap') return this.saidWidth(l, 'line');
     if (as === 'inline' || !l.way)
       return this.lineWidth(l.value, l.unit, as === 'inline' ? l.way : '');
     const figure = this.lineWidth(l.value, l.unit, '');
@@ -851,8 +861,10 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
    * it has no second figure there; by a glyph in its lane's ink.
    */
   private waysFor(n: Node, words: Words): readonly WayMode[] {
-    if (oneWay(n.kind)) return ['inline'];
-    return n.pair || words.second ? ['inline', 'glyph'] : ['inline', 'line', 'glyph'];
+    if (oneWay(n.kind)) return ['inline', 'wrap'];
+    return n.pair || words.second
+      ? ['inline', 'glyph', 'wrap']
+      : ['inline', 'line', 'glyph', 'wrap'];
   }
 
   /** A node's figure lines whatever it reads, its way said `as`: the usual figure (`USUAL`) with each of its ways. */
@@ -874,11 +886,19 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       'en-words__label',
       charged(n.name, n.level === null ? null : 100),
     );
-    return this.waysFor(n, words).map((way) => ({
-      way,
-      steady: Math.max(label, this.steadyLines(n, period, way)),
-      now: this.wordsWidth(words, way),
-    }));
+    return this.waysFor(n, words).map((way) =>
+      way === 'wrap'
+        ? {
+            way,
+            steady: Math.max(WRAP_LABEL, this.steadyLines(n, period, 'line')),
+            now: Math.max(WRAP_LABEL, this.wordsWidth(words, 'line')),
+          }
+        : {
+            way,
+            steady: Math.max(label, this.steadyLines(n, period, way)),
+            now: this.wordsWidth(words, way),
+          },
+    );
   }
 
   /**
@@ -1148,7 +1168,8 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         const words = scene.words[i] as Words;
         const as = rows.ways[i] ?? 'inline';
         // a node with a line under its figure (a pair's second, its way) stands as its three lines, whatever it says now
-        const top = n.pair || as === 'line' ? 28 : blockH(words) / 2;
+        const top =
+          as === 'wrap' ? 24 : n.pair || as === 'line' ? 28 : blockH(words) / 2;
         return html`${this.nodeIcon(n, c, this.roundLabel(n, words, as))}
           <div class="en-place" style="left:${TEXT}px;top:${c[1] - top}px">
             ${renderWords(words, 'left', as, n.pair)}
@@ -1575,7 +1596,7 @@ function blockH(w: Words | undefined): number {
  * way's own line (16) held where it may say one.
  */
 const wordsH = (w: Words, pair: boolean, as: WayMode): number =>
-  pair || w.second ? 56 : as === 'line' ? 52 : 36;
+  pair || w.second ? 56 : as === 'line' ? 52 : as === 'wrap' ? 64 : 36;
 
 /** A way said by its lane's own head (#170): toward the house or away from it, in the lane's ink. */
 const wayGlyph = (l: Line): TemplateResult =>
@@ -1607,7 +1628,12 @@ function renderWords(
       >${as === 'line' ? html`<span class="en-words__dir">${l.way}</span>` : nothing}`;
   };
   return html`<span class="en-words en-words--${align} ${w.dim ? 'is-dim' : ''}"
-    ><span class="en-words__label" data-name>${w.label}</span>${line(w)}${
+    ><span
+        class="en-words__label${as === 'wrap' ? ' is-wrap' : ''}"
+        data-name
+        style=${as === 'wrap' ? `inline-size:${WRAP_LABEL}px` : nothing}
+        >${w.label}</span
+      >${line(w)}${
       w.second ? line(w.second) : pair ? html`<span class="en-words__value"></span>` : nothing
     }</span
   >`;

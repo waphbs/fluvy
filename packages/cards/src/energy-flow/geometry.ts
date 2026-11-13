@@ -180,7 +180,10 @@ export const RING = 34; // the house's ring (28) + 6
 export const LANE_MIN = 56; // a lane shorter than this is no lane: the card becomes its list
 
 /** How a node says its way: beside its figure, on the line under it, or by a glyph in its lane's ink. */
-export type WayMode = 'inline' | 'line' | 'glyph';
+export type WayMode = 'inline' | 'line' | 'glyph' | 'wrap';
+
+/** A wrapped label's column: two lines of a long name, so a phone keeps its lanes rather than its list. */
+export const WRAP_LABEL = 96;
 
 /** A node's words with its way said in one of them: as wide as they can read, and as they read now. */
 export interface WordsWidth {
