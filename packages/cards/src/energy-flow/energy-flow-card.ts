@@ -894,7 +894,9 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         ? {
             way,
             steady: Math.max(WRAP_LABEL, this.steadyLines(n, period, 'line')),
-            now: Math.max(WRAP_LABEL, this.wordsWidth(words, 'line')),
+            // a wrapped block is a column of WRAP_LABEL wide: its figure sits under its label, so the lane may
+            // leave right after that column - not after the label's one-line width, which would eat the lane
+            now: WRAP_LABEL,
           }
         : {
             way,
