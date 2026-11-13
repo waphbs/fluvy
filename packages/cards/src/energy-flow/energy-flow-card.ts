@@ -282,10 +282,13 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
       .en-words__label.is-wrap {
         display: block;
         height: auto;
-        max-height: 30px;
+        max-height: 44px;
         white-space: normal;
         overflow-wrap: anywhere;
         line-height: 14px;
+      }
+      .en-place.is-wrap {
+        transform: translateY(-50%);
       }
     `,
   ];
@@ -1169,9 +1172,12 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
         const as = rows.ways[i] ?? 'inline';
         // a node with a line under its figure (a pair's second, its way) stands as its three lines, whatever it says now
         const top =
-          as === 'wrap' ? 24 : n.pair || as === 'line' ? 28 : blockH(words) / 2;
+          as === 'wrap' ? 0 : n.pair || as === 'line' ? 28 : blockH(words) / 2;
         return html`${this.nodeIcon(n, c, this.roundLabel(n, words, as))}
-          <div class="en-place" style="left:${TEXT}px;top:${c[1] - top}px">
+          <div
+            class="en-place${as === 'wrap' ? ' is-wrap' : ''}"
+            style="left:${TEXT}px;top:${c[1] - top}px"
+          >
             ${renderWords(words, 'left', as, n.pair)}
           </div>`;
       })}

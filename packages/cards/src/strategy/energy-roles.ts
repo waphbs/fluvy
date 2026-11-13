@@ -103,8 +103,23 @@ export function findEnergyRoles(home: HomeRegistry, prefs: EnergyPrefs | null): 
   const homePower = saying(powers, 'home').find((id) => !taken.includes(id));
   // today's production: the energy dashboard's solar meter (the cards read its day from its statistics), else a day's
   // counter its words name; never a forecast
+  // Two arrays, one forecast: when the house has more than one solar meter, its day is best read from a counter that
+  // adds them up ("MPPT 日发电总量(E1+E2)"), which is what a whole-house forecast can be compared with.
+  const COMBINED_DAY = /(?:E1\s*\+\s*E2|E2\s*\+\s*E1|1\s*\+\s*2)/i;
+  const solarMeters = house.sources.find((s) => s.kind === 'solar')?.energyIn ?? [];
+  const combinedToday = home.ids().find(
+    (id) =>
+      id.startsWith('sensor.') &&
+      home.hasState(id) &&
+      !home.forecast(id) &&
+      COMBINED_DAY.test(home.label(id)) &&
+      /(日发电|日發電|日発電|今天|today)/i.test(home.label(id)) &&
+      /kwh|wh/i.test(home.unitOf(id)) &&
+      /^total/.test(home.stateClass(id)),
+  );
   const solarToday =
-    house.sources.find((s) => s.kind === 'solar')?.energyIn.find((id) => home.hasState(id)) ??
+    combinedToday ??
+    solarMeters.find((id) => home.hasState(id)) ??
     saying(energies, 'solar').find((id) => TODAY.test(home.label(id)));
   // The day's forecast: Solcast and friends state a day's total and carry its hours as an attribute. Their device is
   // named for the day, so every sensor of it says "today": the day's total is the reading whose attributes carry the

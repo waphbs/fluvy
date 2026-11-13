@@ -364,6 +364,16 @@ export class HomeRegistry {
   deviceClass(id: string): string {
     return String(this.attr<string>(id, 'device_class') ?? '');
   }
+  /** Every reading the registry kept, in a stable order. */
+  ids(): readonly string[] {
+    return Object.keys(this.hass.states).sort();
+  }
+
+  /** The unit a reading carries, if it carries one. */
+  unitOf(id: string): string {
+    return String(this.attr(id, 'unit_of_measurement') ?? '');
+  }
+
   stateClass(id: string): string {
     return String(this.attr<string>(id, 'state_class') ?? '');
   }
