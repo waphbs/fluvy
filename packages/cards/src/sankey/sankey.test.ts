@@ -8,6 +8,7 @@ import {
   GAP,
   layoutSankey,
   packLabels,
+  packLegend,
   RIBBONS,
   scaleOf,
   TIER,
@@ -334,5 +335,33 @@ describe('a device away from the house (A7, the owner’s rule)', () => {
     expect(idNamed(away, resolveEntity(away, 'sensor.sk_never_seen_energy'), 'Sauna')).toBe(false);
     const here = house({ 'sensor.sk_oven_energy': meter('Oven') });
     expect(idNamed(here, resolveEntity(here, 'sensor.sk_oven_energy'), undefined)).toBe(false);
+  });
+});
+
+describe('a row of words its bars cannot hold', () => {
+  const model = sankeyModel(day.totals, day.allocation, DEVICES, 4);
+  const g = layoutSankey(model, 320, (key) => (key.startsWith('device:') ? 80 : 60));
+
+  it('reads as a legend instead: left to right, a tier a line, 16 apart (#183)', () => {
+    // four words 80 wide in a 240 column: two a line, the rest under
+    const legend = packLegend(g.kids, () => 80, 240);
+    expect(legend.map((l) => l.tier)).toEqual([0, 0, 1, 1]);
+    for (const tier of [0, 1]) {
+      const line = legend.filter((l) => l.tier === tier).sort((a, b) => a.x - b.x);
+      expect(line[0]?.x).toBe(0);
+      const [first, second] = line;
+      if (first && second) expect(second.x - (first.x + first.w)).toBe(APART);
+    }
+  });
+
+  it('keeps every word inside the column, none on top of another', () => {
+    const legend = packLegend(g.kids, () => 80, 240);
+    for (const l of legend) {
+      expect(l.x).toBeGreaterThanOrEqual(0);
+      expect(l.x + l.w).toBeLessThanOrEqual(240);
+    }
+    for (const a of legend)
+      for (const b of legend)
+        if (a !== b && a.tier === b.tier) expect(Math.abs(a.x - b.x)).toBeGreaterThanOrEqual(80);
   });
 });

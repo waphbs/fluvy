@@ -133,6 +133,30 @@ export function packLabels(
 const tiersOf = (labels: readonly Omit<LaidLabel, 'y'>[]): number =>
   labels.length ? 1 + Math.max(...labels.map((l) => l.tier)) : 0;
 
+/**
+ * Packs a row's words as a legend: left to right in the column, `APART` between two, a tier a line. Where a row's own
+ * places would stack its words under each other, three tiers deep (#183), they read as a list instead of a pile.
+ */
+export function packLegend(
+  row: readonly LaidNode[],
+  measure: (key: string) => number,
+  width: number,
+): Omit<LaidLabel, 'y'>[] {
+  const tiers: [number, number][][] = [];
+  return row.map((n) => {
+    const w = Math.min(width, Math.ceil(measure(n.key)));
+    for (let t = 0; ; t++) {
+      const tier = (tiers[t] ??= []);
+      const last = tier[tier.length - 1];
+      const x = last ? last[1] + APART : 0;
+      if (x + w <= width) {
+        tier.push([x, x + w]);
+        return { key: n.key, x, w, tier: t, end: false };
+      }
+    }
+  });
+}
+
 const f = (n: number): string => n.toFixed(1);
 
 /** A ribbon from a band of `w0` at (x0, y0) down to a band of `w1` at (x1, y1): two cubics and their ends. */
@@ -216,7 +240,9 @@ export function layoutSankey(
 
   const topWords = packLabels(top, measure, width);
   const midWords = packLabels(mid, measure, width);
-  const kidWords = packLabels(kids, measure, width);
+  const kidsPacked = packLabels(kids, measure, width);
+  // devices too many for a line: their own places would pile three tiers deep, so they read as a legend (#183)
+  const kidWords = tiersOf(kidsPacked) > 1 ? packLegend(kids, measure, width) : kidsPacked;
   const y0 = tiersOf(topWords) * TIER + WORDS_GAP;
   const y1 = y0 + BAR + RIBBONS;
   const midY = y1 + BAR + WORDS_GAP;

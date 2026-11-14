@@ -24,7 +24,8 @@ export const detailsStyles = css`
     border: 0;
     background: color-mix(in srgb, var(--fluvy-neutral-05) 48%, transparent);
     color: inherit;
-    touch-action: none;
+    /* the sheet inside pans its own overflow (pan-y); a gesture that misses it pans nothing (the dialog hides it) */
+    touch-action: auto;
     overscroll-behavior: contain;
     animation: fv-fade 240ms var(--fv-ease) both;
   }
@@ -68,10 +69,12 @@ export const detailsStyles = css`
       opacity: 0;
     }
   }
-  /* the sheet reads at the size this device reads its dashboards at, as the cards under it do */
+  /* the sheet reads at the size this device reads its dashboards at, as the cards under it do: its box is laid out
+     smaller by that factor, so what it draws still fits the screen and scrolls inside it */
   dialog .fv-sheet {
-    max-width: 392px;
-    max-height: 100%;
+    width: calc(100% / var(--fluvy-zoom, 1));
+    max-width: calc(392px / var(--fluvy-zoom, 1));
+    max-height: calc(100% / var(--fluvy-zoom, 1));
     overflow-y: auto;
     touch-action: pan-y;
     overscroll-behavior: contain;
