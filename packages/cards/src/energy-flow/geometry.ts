@@ -189,8 +189,8 @@ export type WayMode = 'inline' | 'line' | 'glyph';
  */
 export interface WordsWidth {
   readonly way: WayMode;
-  /** The label's lines: 1, or 2 where a long name breaks (#183). */
-  readonly lines: 1 | 2;
+  /** The label's lines: 1, or 2 or 3 where a long name breaks (#183; three where the card is read larger). */
+  readonly lines: 1 | 2 | 3;
   readonly steady: number;
   readonly now: number;
 }
@@ -214,6 +214,8 @@ export interface RowsOptions {
   readonly houseWordsW: number;
   /** Where the energy goes, on the right (the house moves to the middle). */
   readonly consumers?: readonly { readonly wordsH: number; readonly wordsW: number }[];
+  /** Whether a label may take three lines (#183); false where they would grow the card past its stage. */
+  readonly three?: boolean;
 }
 export interface RowLane {
   /** The node's index, and the lane of a pair (0 above, 1 below). */
@@ -237,7 +239,7 @@ export interface RowsLayout {
   readonly houseWords: number;
   /** How each node says its way, and on how many lines its label stands. */
   readonly ways: readonly WayMode[];
-  readonly lines: readonly (1 | 2)[];
+  readonly lines: readonly (1 | 2 | 3)[];
 }
 
 const toDeg = (px: number): number => (px / RING) * (180 / Math.PI);
@@ -266,11 +268,17 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
   const wide = consumers.length > 0;
   const house: Point = [wide ? o.width / 2 : o.width - 28, Math.round((TOP + last) / 2 / 4) * 4];
   const stage = flowStage(Math.max(1, o.nodes.length));
+  // a card read larger (`--fluvy-zoom`) or on a small phone has less room: a lane may be shorter there rather than the
+  // card becoming its list, the arrows read the same at 36 as at 56
+  const laneMin = o.width < 260 ? 36 : o.width < 300 ? 44 : LANE_MIN;
   // each node's words as the first of its ways that leaves a lane, the card's list where none does; the lanes leave
   // after them, or after a figure wider than a house's usual as it reads now, as far as every lane stays one
   const leaves = (w: WordsWidth): boolean =>
-    house[0] - RING - up4(TEXT + w.steady + 12) >= LANE_MIN;
-  const chosen = o.nodes.map((n) => n.words.find(leaves));
+    house[0] - RING - up4(TEXT + w.steady + 12) >= laneMin;
+  // a label on three lines is the room a card read larger has (#183): a card at its usual width keeps two at most
+  const fits = (w: WordsWidth): boolean =>
+    w.lines < 3 || (o.three !== false && o.width < 300);
+  const chosen = o.nodes.map((n) => n.words.find((w) => fits(w) && leaves(w)));
   const narrow = chosen.some((w) => !w);
   const tail = Math.min(
     up4(TEXT + Math.max(0, ...chosen.map((w) => (w ? Math.max(w.steady, w.now) : 0))) + 12),
@@ -350,9 +358,13 @@ export function rowsLayout(o: RowsOptions): RowsLayout {
     houseWords + o.houseWordsH,
     ...cys.map((y, i) => y + Math.max(22, (consumers[i]?.wordsH ?? 36) / 2)),
   ];
+  const height = up4(Math.max(...bottoms));
+  // three lines under a name hang 4 px lower than the stage the diagram declares: the card keeps its stage and its two
+  // lines there rather than growing (#183)
+  if (o.three !== false && height > stage) return rowsLayout({ ...o, three: false });
   return {
     narrow,
-    height: up4(Math.max(...bottoms)),
+    height,
     house,
     nodes: ys.map((y): Point => [22, y]),
     consumers: cys.map((y): Point => [o.width - 22, y]),

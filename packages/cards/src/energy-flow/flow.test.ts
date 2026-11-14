@@ -158,6 +158,28 @@ describe('rows', () => {
     expect(rowsLayout({ width: 420, nodes: [long, node()], ...house }).lines).toEqual([1, 1]);
   });
 
+  it('a label on three lines keeps the lanes where two would list a card read larger (#183)', () => {
+    /** A name of `steady` on one line, half of it on two, a third on three. */
+    const broken = (steady: number) => ({
+      words: [1, 2, 3].map((lines) => ({
+        way: 'inline' as const,
+        lines: lines as 1 | 2 | 3,
+        steady: Math.round(steady / lines),
+        now: Math.round(steady / lines),
+      })),
+      pair: false,
+    });
+    // a card at 125 % of a phone's width: "逆变器 E2 南 MPPT 累计发电量" takes 3 lines (76) where 2 take 128
+    const long = broken(190);
+    const narrow = rowsLayout({ width: 256, nodes: [long, broken(120), broken(120)], ...house });
+    expect(narrow.narrow).toBe(false);
+    expect(narrow.lines[0]).toBe(3);
+    expect(narrow.height).toBe(flowStage(3));
+    // a card at its usual width keeps two lines at most: the stage it declares is not grown by a third
+    const usual = rowsLayout({ width: 320, nodes: [long, broken(120), broken(120)], ...house });
+    expect(usual.lines.every((lines) => lines <= 2)).toBe(true);
+  });
+
   it('the stage is the height the card declares, whatever its words and its ways (#170)', () => {
     for (const count of [1, 2, 3, 4, 5]) {
       const nodes = Array.from({ length: count }, (_, i) => node(i === count - 1));
