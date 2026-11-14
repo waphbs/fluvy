@@ -186,6 +186,14 @@ export function productionCards(ctx: StrategyContext): Loose[] {
         full('production', { ...today, day: 'tomorrow' }),
       ]),
     ),
+    // every day the forecast holds after today, a bar a day, under tomorrow's card (the same column)
+    ...part(
+      ctx,
+      'ahead',
+      when(entity && energy.solarForecast, () => [
+        full('production', { ...today, day: 'ahead', days: 7 }),
+      ]),
+    ),
   ];
   return [
     // today's and tomorrow's in one column, whichever of them a person keeps
