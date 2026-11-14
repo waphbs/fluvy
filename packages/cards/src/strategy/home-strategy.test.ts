@@ -1451,6 +1451,7 @@ describe('custom:fluvy-home strategy', () => {
       expect(await productions(type, path, ['forecast_solar'])).toEqual([
         today,
         { ...today, day: 'tomorrow' },
+        { ...today, day: 'ahead', days: 7 },
       ]);
       // a house with no forecast keeps its one card
       expect(await productions(type, path, [])).toEqual([today]);

@@ -23,6 +23,7 @@ exports[`the automatic dashboards’ parts (#170) > keep their ids for a house w
     "production": [
       "production",
       "tomorrow",
+      "ahead",
       "history",
       "gauges",
       "curve",
@@ -74,6 +75,7 @@ exports[`the automatic dashboards’ parts (#170) > keep their ids for a house w
       "gauges",
       "production",
       "tomorrow",
+      "ahead",
       "history",
       "distribution",
       "consumption",

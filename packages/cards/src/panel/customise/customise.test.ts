@@ -522,9 +522,10 @@ describe('Customise (#170)', () => {
 
     chip('Production').click();
     await m.settle(2);
-    expect(m.parts().slice(0, 3)).toEqual([
+    expect(m.parts().slice(0, 4)).toEqual([
       'production/production',
       'production/tomorrow',
+      'production/ahead',
       'production/history',
     ]);
     // today's and tomorrow's read the same meter: what each is stands under its name
