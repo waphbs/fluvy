@@ -1,15 +1,18 @@
 import { parseBackground, type AreaRegistryEntry, type KeyOf } from '@fluvy/core';
 import { capsOf } from './caps.js';
-import { roomsOf } from './rooms.js';
+import { roomsOf, type RoomBack } from './rooms.js';
 import type {
   FluvyStrategyConfig,
   StrategyContext,
   StrategyType,
   TemplateId,
+  View,
   ViewSpec,
 } from './types.js';
+import { CLIMATE_VIEWS, climateRoomView } from './views/climate.js';
 import { ENERGY_VIEWS } from './views/energy.js';
 import { HOME_VIEWS } from './views/home.js';
+import { LIGHT_VIEWS, lightsRoomView } from './views/lights.js';
 import { roomTab, roomsViews } from './views/rooms.js';
 import { SECURITY_VIEWS } from './views/security.js';
 import { WALL_VIEWS, wallRooms } from './views/wall.js';
@@ -72,6 +75,11 @@ export interface Template {
   readonly views: readonly ViewSpec[] | ((ctx: StrategyContext) => readonly ViewSpec[]);
   /** The rooms the dashboard opens as subviews, given the paths of the views it built. */
   readonly rooms?: (ctx: StrategyContext, paths: readonly string[]) => RoomLink[];
+  /**
+   * What a room's subview holds, where it holds less than the room's whole page (the lights dashboard's rooms show
+   * their lights alone): the rooms' own page as `rooms.ts` builds it where left out.
+   */
+  readonly room?: (ctx: StrategyContext, area: AreaRegistryEntry, columns: number, back: RoomBack) => View;
   /** Whether it opens every appliance as a subview: Home's bands lead there ("All appliances"). */
   readonly appliances?: boolean;
   readonly options: readonly TemplateOption[];
@@ -280,6 +288,51 @@ export const TEMPLATES: readonly Template[] = [
       THERMOSTAT,
       THERMOSTAT_STATE,
       choice('scenes_max', 'dashboard.scenes', counts([4, 6, 8], 'dashboard.count')),
+      BACKGROUND,
+      CAPS,
+      EXCLUDE,
+    ],
+  },
+  {
+    id: 'lights',
+    type: 'custom:fluvy-lights',
+    url: 'fluvy-lights',
+    icon: 'fluvy:bulb',
+    title: 'template.lights',
+    description: 'template.lights_sub',
+    columns: 3,
+    header: 'hello',
+    views: LIGHT_VIEWS,
+    // every room whose lights count: the room pages show their lights alone
+    rooms: (ctx) =>
+      roomsOf(ctx.home).map((area) => ({
+        area,
+        back: { path: `${ctx.base}/lights`, title: ctx.t('strategy.all_rooms') },
+      })),
+    room: lightsRoomView,
+    options: [HIDE, TILES, SWITCHES, GROUPS, GREETING_TABS, BACKGROUND, CAPS, EXCLUDE],
+  },
+  {
+    id: 'climate',
+    type: 'custom:fluvy-climate',
+    url: 'fluvy-climate',
+    icon: 'fluvy:thermometer',
+    title: 'template.climate',
+    description: 'template.climate_sub',
+    columns: 3,
+    header: 'hello',
+    views: CLIMATE_VIEWS,
+    rooms: (ctx) =>
+      roomsOf(ctx.home).map((area) => ({
+        area,
+        back: { path: `${ctx.base}/climate`, title: ctx.t('strategy.all_rooms') },
+      })),
+    room: climateRoomView,
+    options: [
+      HIDE,
+      THERMOSTAT,
+      THERMOSTAT_STATE,
+      GREETING_TABS,
       BACKGROUND,
       CAPS,
       EXCLUDE,

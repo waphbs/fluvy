@@ -16,7 +16,7 @@ import { editorDefaults, FluvyRowsEditor, itemHelpers, itemLabels } from './rows
  * Each card's editor is read as the base reads it (`editor()`): its class's, or the module of a card every page
  * carries.
  */
-const PENDING = new Set<string>();
+const PENDING = new Set<string>(['fluvy-room-rail-card']);
 
 type CardClass = typeof Card & {
   getStubConfig?(hass: unknown, entities: readonly string[]): LovelaceCardConfig;

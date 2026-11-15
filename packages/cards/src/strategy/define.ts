@@ -2,7 +2,15 @@ import type { HomeAssistant } from '@fluvy/core';
 import type { FluvyStrategyConfig, TemplateId } from './types.js';
 
 /** The automatic dashboards, each a strategy: `custom:fluvy-<id>` (`templates.ts` lists the same five). */
-export const TEMPLATE_IDS: readonly TemplateId[] = ['home', 'rooms', 'energy', 'security', 'wall'];
+export const TEMPLATE_IDS: readonly TemplateId[] = [
+  'home',
+  'rooms',
+  'energy',
+  'security',
+  'wall',
+  'lights',
+  'climate',
+];
 
 /**
  * The automatic dashboards' strategies, defined for Home Assistant now and fetched when a dashboard asks for one:

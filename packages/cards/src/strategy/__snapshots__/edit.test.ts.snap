@@ -2,6 +2,28 @@
 
 exports[`the automatic dashboards’ parts (#170) > keep their ids for a house with one of everything (golden file) 1`] = `
 {
+  "climate": {
+    "climate": [
+      "thermostats",
+      "fans",
+      "weather",
+      "humidity",
+      "temperatures",
+      "rail",
+    ],
+    "room-bedroom": [
+      "rail",
+    ],
+    "room-garden": [
+      "rail",
+    ],
+    "room-kitchen": [
+      "rail",
+    ],
+    "room-living_room": [
+      "rail",
+    ],
+  },
   "energy": {
     "devices": [
       "consumption",
@@ -113,20 +135,25 @@ exports[`the automatic dashboards’ parts (#170) > keep their ids for a house w
       "back",
       "lights",
       "readings",
+      "rail",
     ],
     "room-garden": [
       "back",
       "readings",
+      "rail",
     ],
     "room-kitchen": [
       "back",
       "lights",
+      "rail",
     ],
     "room-living_room": [
       "back",
       "lights",
+      "rail",
     ],
     "rooms": [
+      "rail",
       "floor:ground",
       "room:kitchen",
       "room:living_room",
@@ -153,32 +180,64 @@ exports[`the automatic dashboards’ parts (#170) > keep their ids for a house w
       "camera",
     ],
   },
+  "lights": {
+    "lights": [
+      "lights:bedroom",
+      "lights:living_room",
+      "lights:kitchen",
+      "lights:outdoor",
+      "scenes",
+      "rail",
+    ],
+    "room-bedroom": [
+      "rail",
+      "lights:bedroom",
+    ],
+    "room-garden": [
+      "rail",
+    ],
+    "room-kitchen": [
+      "rail",
+      "lights:kitchen",
+    ],
+    "room-living_room": [
+      "rail",
+      "lights:living_room",
+    ],
+  },
   "rooms": {
     "floor-ground": [
+      "rail",
       "room:kitchen",
       "room:living_room",
     ],
     "floor-upstairs": [
+      "rail",
       "room:bedroom",
     ],
     "room-bedroom": [
       "back",
       "lights",
       "readings",
+      "rail",
     ],
     "room-garden": [
       "back",
       "readings",
+      "rail",
     ],
     "room-kitchen": [
       "back",
       "lights",
+      "rail",
     ],
     "room-living_room": [
       "back",
       "lights",
+      "rail",
     ],
     "rooms": [
+      "rail",
       "room:garden",
     ],
   },
@@ -202,18 +261,22 @@ exports[`the automatic dashboards’ parts (#170) > keep their ids for a house w
       "back",
       "lights",
       "readings",
+      "rail",
     ],
     "room-garden": [
       "back",
       "readings",
+      "rail",
     ],
     "room-kitchen": [
       "back",
       "lights",
+      "rail",
     ],
     "room-living_room": [
       "back",
       "lights",
+      "rail",
     ],
     "wall": [
       "hello",

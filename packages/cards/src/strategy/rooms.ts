@@ -37,7 +37,8 @@ export function roomsOf(home: HomeRegistry): AreaRegistryEntry[] {
   return home.areas.filter((area) => holdsSomething(home.contents(area.area_id)));
 }
 
-const roomPath = (base: string, area: AreaRegistryEntry): string => `${base}/room-${area.area_id}`;
+/** Where a room's own page lives (a subview of the dashboard at `base`). */
+export const roomPath = (base: string, area: AreaRegistryEntry): string => `${base}/room-${area.area_id}`;
 
 /**
  * A room's lights where the house counts a lamp on a plug among them (`home.lights`), for its card's row and round:
@@ -66,6 +67,31 @@ export const roomCard = (ctx: StrategyContext, area: AreaRegistryEntry): Card =>
   grid_options: { columns: 12 },
 });
 
+/**
+ * The rooms in one rail at the top of a page: a chip each, the page's own room marked (`current`). It stands in the
+ * page's first part, so Customise offers it as "Rail" beside the rooms, and a room's page steps to its neighbours
+ * without going back to the list.
+ */
+export const roomRail = (ctx: StrategyContext, current?: string): Card[] =>
+  part(ctx, 'rail', [
+    {
+      type: 'custom:fluvy-room-rail-card',
+      rooms: roomsOf(ctx.home).map((area) => ({
+        name: area.name,
+        icon: area.icon ?? 'fluvy:home',
+        path: roomPath(ctx.base, area),
+      })),
+      ...(current ? { current } : {}),
+    },
+  ]);
+
+/** The same sections, with the rail's chips on the first of them: an overview keeps the way to every room. */
+export const railFirst = (ctx: StrategyContext, sections: Section[]): Section[] => {
+  const [first, ...rest] = sections;
+  if (!first) return flowed(ctx, [roomRail(ctx)], []);
+  return [{ ...first, cards: [...roomRail(ctx), ...(first.cards ?? [])] }, ...rest];
+};
+
 /** A room's card as a part of its view. */
 export const roomPart = (
   ctx: StrategyContext,
@@ -76,6 +102,7 @@ export const roomPart = (
 /** The Rooms view: a card a room; headed by floor when the house has more than one. */
 export function roomsView(ctx: StrategyContext): Section[] {
   const { home, t, base } = ctx;
+  const columns = ctx.more?.columns ?? 3;
   const rooms = roomsOf(home);
   const floors = home.floors.filter((floor) =>
     rooms.some((room) => room.floor_id === floor.floor_id),
@@ -83,7 +110,9 @@ export function roomsView(ctx: StrategyContext): Section[] {
   if (floors.length < 2)
     return flowed(
       ctx,
-      rooms.map((area) => roomPart(ctx, area)),
+      [roomRail(ctx), ...rooms.map((area) => roomPart(ctx, area))],
+      [],
+      columns,
     );
   const unplaced = rooms.filter(
     (room) => !floors.some((floor) => floor.floor_id === room.floor_id),
@@ -96,18 +125,24 @@ export function roomsView(ctx: StrategyContext): Section[] {
       .filter((cards) => cards.length);
     return [[...top, ...first], ...rest];
   };
-  return flowed(ctx, [
-    ...floors.flatMap((floor) =>
-      under(
-        `floor:${floor.floor_id}`,
-        heading(floor.name, floor.icon ?? 'fluvy:home', [], `${base}/rooms`),
-        rooms.filter((room) => room.floor_id === floor.floor_id),
+  return flowed(
+    ctx,
+    [
+      roomRail(ctx),
+      ...floors.flatMap((floor) =>
+        under(
+          `floor:${floor.floor_id}`,
+          heading(floor.name, floor.icon ?? 'fluvy:home', [], `${base}/rooms`),
+          rooms.filter((room) => room.floor_id === floor.floor_id),
+        ),
       ),
-    ),
-    ...(unplaced.length
-      ? under('other', heading(t('strategy.rooms'), 'fluvy:home', [], `${base}/rooms`), unplaced)
-      : []),
-  ]);
+      ...(unplaced.length
+        ? under('other', heading(t('strategy.rooms'), 'fluvy:home', [], `${base}/rooms`), unplaced)
+        : []),
+    ],
+    [],
+    columns,
+  );
 }
 
 /** Where a room's heading leads back to, and what it says ("All rooms", or the wall's home). */
@@ -429,8 +464,10 @@ export function roomSections(
     [],
     columns,
   );
+  const [opening = section(heading(back.title, 'fluvy:home', [], back.path)), ...others] = sections;
   return [
-    ...(sections.length ? sections : [section(heading(back.title, 'fluvy:home', [], back.path))]),
+    { ...opening, cards: [...roomRail(ctx, roomPath(ctx.base, area)), ...opening.cards] },
+    ...others,
     ...applianceSections(ctx, parts.devices, columns),
   ];
 }

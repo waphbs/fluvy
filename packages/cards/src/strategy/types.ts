@@ -18,7 +18,7 @@ import { type RoomCardConfig, type RoomVariant } from '../room/room-card.js';
  */
 
 /** The dashboards Fluvy builds by itself, each a template: `custom:fluvy-<id>`. */
-export type TemplateId = 'home' | 'rooms' | 'energy' | 'security' | 'wall';
+export type TemplateId = 'home' | 'rooms' | 'energy' | 'security' | 'wall' | 'lights' | 'climate';
 export type StrategyType = `custom:fluvy-${TemplateId}`;
 
 /** Seconds between a camera's stills on the security dashboard. */

@@ -26,6 +26,7 @@ import { FluvyTilesCard } from './tiles/tiles-card.js';
 import { FluvyTimerCard } from './timer/timer-card.js';
 import { FluvyTodoCard } from './todo/todo-card.js';
 import { FluvyUpdatesCard } from './updates/updates-card.js';
+import { FluvyRoomRailCard } from './rail/rail-card.js';
 import { FluvyRoomCard, loadQuickActions } from './room/room-card.js';
 import { FluvyLightsCard } from './lights/lights-card.js';
 import { FluvyMapCard } from './map/map-card.js';
@@ -213,6 +214,12 @@ const CATALOGUE: readonly CatalogueEntry[] = [
     'A room of the house from its area: its picture, its climate, what is on, and its controls.',
   ],
   [
+    'fluvy-room-rail-card',
+    FluvyRoomRailCard,
+    'Fluvy · Room rail',
+    'The rooms in one row at the top of a page: a chip each, the page’s own room marked, scrolling sideways.',
+  ],
+  [
     'fluvy-map-card',
     FluvyMapCard,
     'Fluvy · Map',
@@ -330,6 +337,7 @@ export {
   FluvyOpeningsCard,
   FluvyPeopleCard,
   FluvyReadoutsCard,
+  FluvyRoomRailCard,
   FluvySceneCard,
   FluvyScenesCard,
   FluvySensorCard,

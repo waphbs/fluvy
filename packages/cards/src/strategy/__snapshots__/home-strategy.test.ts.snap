@@ -211,6 +211,26 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
               "weather": "weather.home",
             },
             {
+              "rooms": [
+                {
+                  "icon": "mdi:silverware-fork-knife",
+                  "name": "Kitchen",
+                  "path": "/fluvy-home/room-kitchen",
+                },
+                {
+                  "icon": "mdi:sofa",
+                  "name": "Living room",
+                  "path": "/fluvy-home/room-living_room",
+                },
+                {
+                  "icon": "fluvy:home",
+                  "name": "Garden",
+                  "path": "/fluvy-home/room-garden",
+                },
+              ],
+              "type": "custom:fluvy-room-rail-card",
+            },
+            {
               "area": "kitchen",
               "grid_options": {
                 "columns": 12,
@@ -676,6 +696,27 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
               "weather": "weather.home",
             },
             {
+              "current": "/fluvy-home/room-kitchen",
+              "rooms": [
+                {
+                  "icon": "mdi:silverware-fork-knife",
+                  "name": "Kitchen",
+                  "path": "/fluvy-home/room-kitchen",
+                },
+                {
+                  "icon": "mdi:sofa",
+                  "name": "Living room",
+                  "path": "/fluvy-home/room-living_room",
+                },
+                {
+                  "icon": "fluvy:home",
+                  "name": "Garden",
+                  "path": "/fluvy-home/room-garden",
+                },
+              ],
+              "type": "custom:fluvy-room-rail-card",
+            },
+            {
               "icon": "fluvy:home",
               "path": "/fluvy-home/rooms",
               "title": "All rooms",
@@ -725,6 +766,27 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
             {
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
+            },
+            {
+              "current": "/fluvy-home/room-living_room",
+              "rooms": [
+                {
+                  "icon": "mdi:silverware-fork-knife",
+                  "name": "Kitchen",
+                  "path": "/fluvy-home/room-kitchen",
+                },
+                {
+                  "icon": "mdi:sofa",
+                  "name": "Living room",
+                  "path": "/fluvy-home/room-living_room",
+                },
+                {
+                  "icon": "fluvy:home",
+                  "name": "Garden",
+                  "path": "/fluvy-home/room-garden",
+                },
+              ],
+              "type": "custom:fluvy-room-rail-card",
             },
             {
               "icon": "fluvy:home",
@@ -777,6 +839,27 @@ exports[`custom:fluvy-home strategy > generates the same dashboard for the demo 
             {
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
+            },
+            {
+              "current": "/fluvy-home/room-garden",
+              "rooms": [
+                {
+                  "icon": "mdi:silverware-fork-knife",
+                  "name": "Kitchen",
+                  "path": "/fluvy-home/room-kitchen",
+                },
+                {
+                  "icon": "mdi:sofa",
+                  "name": "Living room",
+                  "path": "/fluvy-home/room-living_room",
+                },
+                {
+                  "icon": "fluvy:home",
+                  "name": "Garden",
+                  "path": "/fluvy-home/room-garden",
+                },
+              ],
+              "type": "custom:fluvy-room-rail-card",
             },
             {
               "icon": "fluvy:home",

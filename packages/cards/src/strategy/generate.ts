@@ -186,7 +186,13 @@ export async function generateWith(
     ) ?? []
   ).map(({ area, back }) => {
     const more = hostOf(`room-${area.area_id}`, area.name, area.icon ?? 'fluvy:home');
-    return { view: roomView({ ...ctx, more }, area, template.columns, back), more };
+    const inner = { ...ctx, more };
+    return {
+      view: template.room
+        ? template.room(inner, area, template.columns, back)
+        : roomView(inner, area, template.columns, back),
+      more,
+    };
   });
   const appliances =
     template.appliances && ctx.home.applianceDevices.length
