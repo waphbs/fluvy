@@ -844,6 +844,14 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       known && !unusable && expected > 0
         ? Math.max(-9.99, Math.min(9.99, total / expected - 1))
         : null;
+    // under the pointer the badge is that hour's share of its own forecast, like the figure above it: the day's
+    // progress would answer a question the row no longer asks (an hour that has not come reads −100 %)
+    const hoveredHour = hovered !== null && forecast ? (forecast[hovered] ?? 0) : 0;
+    const hourDelta =
+      hovered !== null && hoveredHour > 0
+        ? Math.max(-1, Math.min(9.99, (produced[hovered] ?? 0) / hoveredHour - 1))
+        : null;
+    const said = hourDelta ?? delta;
 
     const scale = figuresOf(
       this.hass,
@@ -893,10 +901,10 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
           (versus ? `${this.dayWords()} · ${strings(this.hass, 'vs_forecast')}` : this.dayWords()),
         badge: unusable
           ? { text: stateWord(this.hass, view), tone: 'off' }
-          : delta !== null && compared
+          : said !== null && compared
             ? {
-                text: `${delta >= 0 ? '+' : '−'}${formatNumber(this.hass, Math.abs(delta) * 100, { digits: 0 })} %`,
-                tone: delta >= 0 ? tone : 'neutral',
+                text: `${said >= 0 ? '+' : '−'}${formatNumber(this.hass, Math.abs(said) * 100, { digits: 0 })} %`,
+                tone: said >= 0 ? tone : 'neutral',
               }
             : null,
       });

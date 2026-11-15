@@ -388,6 +388,18 @@ describe('the production card reads Home Assistant’s solar forecast', () => {
     expect(text(root, '.so-top__side .fv-readout__value')).toEqual(['18.4kWh']);
   });
 
+  it('reads the badge as the hour’s share of its forecast while one is held, the day’s progress otherwise', async () => {
+    const card = await mountIn(forecastHouse({ solcast: forecastOf([1]) }), {});
+    const root = card.shadowRoot!;
+    // 13.4 kWh against 13.5 expected by 14:30
+    expect(text(root, '.fv-badge')).toEqual(['−1 %']);
+    // 12:00's 2.3 kWh against its 2.6: the row's own comparison, not the day's
+    await readAt(card, 12);
+    expect(text(root, '.fv-badge')).toEqual(['−12 %']);
+    await readAt(card, null);
+    expect(text(root, '.fv-badge')).toEqual(['−1 %']);
+  });
+
   it('adds two entries, lets a named sensor win, and asks for nothing where the forecast is turned off', async () => {
     const planes = await mountIn(
       forecastHouse({ east: forecastOf([0.5]), west: forecastOf([0.25]) }),
