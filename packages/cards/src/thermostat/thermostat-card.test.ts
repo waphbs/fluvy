@@ -402,6 +402,24 @@ describe('the fan speeds and presets, in the page’s words (#142)', () => {
     setLanguageOverride('en');
     expect(await chips()).toEqual(['Eco', 'Boost', 'Auto', 'Low', 'Mid', 'High', 'Quiet']);
   });
+
+  it('draws a speed the entity runs at but does not offer as the chosen one, unselectable (#fan)', async () => {
+    // an ESPHome air conditioner whose firmware lists Low and High while the unit answers "middle"
+    const middle = entity('climate.hall_ac', 'heat', {
+      hvac_modes: ['off', 'heat'],
+      temperature: 23,
+      fan_modes: ['low', 'high'],
+      fan_mode: 'middle',
+    });
+    const card = await draw(middle);
+    const drawn = [...card.renderRoot.querySelectorAll('.fv-chip')];
+    const fan = drawn.filter((chip) => ['Low', 'Mid', 'High'].includes(chip.textContent?.trim() ?? ''));
+    expect(fan.map((chip) => chip.textContent?.trim())).toEqual(['Mid', 'Low', 'High']);
+    expect(fan[0]?.getAttribute('aria-pressed')).toBe('true');
+    expect(fan[0]?.getAttribute('aria-disabled')).toBe('true');
+    expect(fan[1]?.getAttribute('aria-pressed')).toBe('false');
+    card.remove();
+  });
 });
 
 /** A ruler of 8 a letter, a badge its words and its sides: the widths a head is fitted by. */

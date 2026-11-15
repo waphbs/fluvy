@@ -43,7 +43,7 @@ import { HeadFit, type FittedHead } from '../energy/head.js';
 import { optionCell, optionColumnsFor, optionsHold, valuesHeld } from '../shared/options.js';
 import { BrokenPictures, imageEntity, imageOf } from '../shared/picture.js';
 import type { WhenOff } from '../shared/config.js';
-import { chipRow } from '../shared/chips.js';
+import { chipRow, type Choice } from '../shared/chips.js';
 import { haWord, modeWord, pretty } from '../shared/mode-words.js';
 import { fitValueRow, STEPPER, STEPPER_HALVES, valueRowClass } from '../shared/value-row.js';
 import { degrees, doing, setpoint, type Doing } from './doing.js';
@@ -156,6 +156,7 @@ const SPEEDS = new Map<string, MessageKey>([
   ['auto', 'climate.mode.auto'],
   ['low', 'fan.low'],
   ['mid', 'fan.mid'],
+  ['middle', 'fan.mid'],
   ['medium', 'fan.mid'],
   ['high', 'fan.high'],
 ]);
@@ -828,6 +829,37 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       .filter((o): o is OptionItem => o !== undefined);
   }
 
+  /**
+   * The fan speeds as chips: what the entity offers, and — where it runs at a speed it does not list (an ESPHome
+   * air conditioner on "middle" beside a list of Low and High, its own firmware's list narrower than the unit) — that
+   * speed ahead of them, chosen and unselectable, so the row says what it runs at instead of nothing.
+   */
+  private fanChoices(
+    m: ThermostatModel,
+    view: EntityView,
+    unusable: boolean,
+  ): readonly Choice[] {
+    const choices: Choice[] = m.fans.map((f) => {
+      const speed = SPEEDS.get(f.toLowerCase());
+      return {
+        key: f,
+        label: modeWord(this.rawHass, view, 'fan_mode', f, speed),
+        ...(speed ? { own: localize(this.hass, speed) } : {}),
+        active: f === m.fan,
+        unavailable: unusable,
+      };
+    });
+    const fan = m.fan;
+    if (fan && !m.fans.some((f) => f.toLowerCase() === fan.toLowerCase()))
+      choices.unshift({
+        key: fan,
+        label: modeWord(this.rawHass, view, 'fan_mode', fan, SPEEDS.get(fan.toLowerCase())),
+        active: true,
+        unavailable: true,
+      });
+    return choices;
+  }
+
   private renderModes(
     view: EntityView,
     m: ThermostatModel,
@@ -958,16 +990,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       ${
         m.fans.length && !essentials && this.config?.show_fan !== false
           ? html`${label(this.t('climate.fan'))}${chipRow(
-              m.fans.map((f) => {
-                const speed = SPEEDS.get(f.toLowerCase());
-                return {
-                  key: f,
-                  label: modeWord(this.rawHass, view, 'fan_mode', f, speed),
-                  ...(speed ? { own: localize(this.hass, speed) } : {}),
-                  active: f === m.fan,
-                  unavailable: unusable,
-                };
-              }),
+              this.fanChoices(m, view, unusable),
               (key) => this.call('climate', 'set_fan_mode', { fan_mode: key }),
               this.config?.fan_style,
               { ruler: this.head.ruler, width: this.contentWidth },
