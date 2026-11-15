@@ -2953,7 +2953,9 @@
     "calendars": "日历",
     "lists": "待办事项",
     "timers": "计时器",
-    "whole_home": "全屋"
+    "whole_home": "全屋",
+    "all_lights": "所有灯光",
+    "all_climate": "所有空调"
   },
   "template": {
     "card": "模板",

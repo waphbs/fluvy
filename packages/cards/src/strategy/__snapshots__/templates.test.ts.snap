@@ -351,7 +351,7 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
           "type": "grid",
         },
       ],
-      "title": "Climate",
+      "title": "Every thermostat",
       "type": "sections",
     },
     {
@@ -799,7 +799,7 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
           "type": "grid",
         },
       ],
-      "title": "Lights",
+      "title": "Every light",
       "type": "sections",
     },
     {
@@ -945,7 +945,7 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
           "type": "grid",
         },
       ],
-      "title": "Rooms",
+      "title": "All rooms",
       "type": "sections",
     },
     {

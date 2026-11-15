@@ -41,7 +41,7 @@ export function roomsViews(ctx: StrategyContext): ViewSpec[] {
   const all: ViewSpec = {
     key: 'rooms',
     icon: 'fluvy:rooms',
-    title: 'strategy.rooms',
+    title: 'strategy.all_rooms',
     build: (c) => grid(c, rooms),
     when: () => true,
   };

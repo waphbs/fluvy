@@ -37,7 +37,7 @@ export const climateViews = (ctx: StrategyContext): readonly ViewSpec[] => [
   {
     key: 'climate',
     icon: 'fluvy:thermometer',
-    title: 'room.climate',
+    title: 'strategy.all_climate',
     build: climateView,
     when: (h) => h.home.climate.length > 0 || h.home.fans.length > 0,
   },

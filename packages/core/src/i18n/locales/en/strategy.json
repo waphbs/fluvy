@@ -45,6 +45,8 @@
     "calendars": "Calendars",
     "lists": "To-do lists",
     "timers": "Timers",
-    "whole_home": "Whole home"
+    "whole_home": "Whole home",
+    "all_lights": "Every light",
+    "all_climate": "Every thermostat"
   }
 }

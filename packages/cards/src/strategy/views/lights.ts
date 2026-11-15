@@ -35,7 +35,7 @@ export const lightViews = (ctx: StrategyContext): readonly ViewSpec[] => [
   {
     key: 'lights',
     icon: 'fluvy:bulb',
-    title: 'room.lights',
+    title: 'strategy.all_lights',
     build: lightsView,
     when: (h) => h.home.lights.length > 0,
   },
