@@ -105,8 +105,6 @@ export const CHINESE: Readonly<Record<string, string>> = {
   "remote.name": "遥控器",
   "room.desc": "按区域展示一个房间：图片、温湿度、开着什么，以及它的控制。",
   "room.name": "房间",
-  "room-rail.desc": "页面顶部一排房间：每间一个标签，当前这页的房间高亮，放不下时横向滑动。",
-  "room-rail.name": "房间导航",
   "scene.desc": "单个场景、脚本或按钮做成磁贴，带完成状态。",
   "scene.name": "场景",
   "scenes.desc": "场景与脚本的网格。",

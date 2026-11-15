@@ -341,9 +341,11 @@ describe('the dashboard templates', () => {
         for (const card of chips)
           expect(card.chips.some((chip) => chip.path?.endsWith(`/${room.path}`))).toBe(false);
       }
-      // the home opens a room from its Rooms view, the rooms and the wall always
-      if (template.id === 'rooms' || template.id === 'wall')
-        expect(rooms.length).toBeGreaterThan(0);
+      // the home opens a room from its Rooms view, the wall from its own; rooms, lights and climate wear their
+      // rooms as tabs
+      if (template.id === 'wall') expect(rooms.length).toBeGreaterThan(0);
+      if (template.id === 'rooms' || template.id === 'lights' || template.id === 'climate')
+        expect(tabs.some((path) => path.startsWith('room-'))).toBe(true);
       if (template.id === 'home')
         expect(rooms.some((room) => room.path.startsWith('room-'))).toBe(tabs.includes('rooms'));
     }
@@ -442,12 +444,14 @@ describe('the dashboard templates', () => {
     const rooms = templateById('rooms');
     const { views } = await generate({ type: rooms.type }, everything());
     const tabs = views.filter((v) => !v.subview);
-    expect(tabs.map((v) => v.path)).toEqual(['floor-ground', 'floor-upstairs', 'rooms']);
-    expect(tabs.map((v) => v.title)).toEqual(['Ground floor', 'Upstairs', 'Other rooms']);
+    expect(tabs.slice(0, 3).map((v) => v.path)).toEqual(['floor-ground', 'floor-upstairs', 'rooms']);
+    expect(tabs.slice(0, 3).map((v) => v.title)).toEqual(['Ground floor', 'Upstairs', 'Other rooms']);
+    // a room is a tab of its own, beside its neighbours in the bar; it needs no way back
     const bedroom = views.find((v) => v.path === 'room-bedroom')!;
-    expect(bedroom.back_path).toBe('/fluvy-home/floor-upstairs');
-    const garden = views.find((v) => v.path === 'room-garden')!;
-    expect(garden.back_path).toBe('/fluvy-home/rooms');
+    expect(bedroom.subview).toBeFalsy();
+    expect(bedroom.back_path).toBeUndefined();
+    expect(tabs.map((v) => v.title)).toContain('Bedroom');
+    expect(tabs.map((v) => v.title)).toContain('Garden');
   });
 
   it('draw the security cameras on one Cameras card a view at the refresh asked for, and the wall’s scenes up to the number asked for', async () => {

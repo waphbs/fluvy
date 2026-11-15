@@ -2,7 +2,6 @@
 
 exports[`the dashboard templates > draw the reporter’s garage whole on its page: readings, the Openings card, the door as a cover (golden file, #76) 1`] = `
 {
-  "back_path": "/fluvy-home/rooms",
   "icon": "mdi:garage",
   "max_columns": 3,
   "path": "room-garage",
@@ -14,49 +13,17 @@ exports[`the dashboard templates > draw the reporter’s garage whole on its pag
           "weather": "weather.home",
         },
         {
-          "current": "/fluvy-home/room-garage",
-          "rooms": [
-            {
-              "icon": "mdi:silverware-fork-knife",
-              "name": "Kitchen",
-              "path": "/fluvy-home/room-kitchen",
-            },
-            {
-              "icon": "mdi:sofa",
-              "name": "Living room",
-              "path": "/fluvy-home/room-living_room",
-            },
-            {
-              "icon": "mdi:garage",
-              "name": "Garage",
-              "path": "/fluvy-home/room-garage",
-            },
-            {
-              "icon": "fluvy:home",
-              "name": "Garden",
-              "path": "/fluvy-home/room-garden",
-            },
-          ],
-          "type": "custom:fluvy-room-rail-card",
-        },
-        {
-          "icon": "fluvy:home",
-          "path": "/fluvy-home/rooms",
-          "title": "All rooms",
-          "type": "custom:fluvy-heading-card",
-        },
-      ],
-      "type": "grid",
-    },
-    {
-      "cards": [
-        {
           "entity": "cover.garage_main_door",
           "grid_options": {
             "columns": 12,
           },
           "type": "custom:fluvy-cover-card",
         },
+      ],
+      "type": "grid",
+    },
+    {
+      "cards": [
         {
           "rows": [
             {
@@ -91,7 +58,6 @@ exports[`the dashboard templates > draw the reporter’s garage whole on its pag
       "type": "grid",
     },
   ],
-  "subview": true,
   "title": "Garage",
   "type": "sections",
 }
@@ -341,26 +307,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "weather": "weather.home",
             },
             {
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
-            {
               "entity": "climate.heat_pump",
               "grid_options": {
                 "columns": 12,
@@ -409,7 +355,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
       "type": "sections",
     },
     {
-      "back_path": "/fluvy-home/climate",
       "icon": "mdi:silverware-fork-knife",
       "max_columns": 3,
       "path": "room-kitchen",
@@ -420,27 +365,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
             },
-            {
-              "current": "/fluvy-home/room-kitchen",
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
           ],
           "type": "grid",
         },
@@ -453,12 +377,10 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
           "type": "grid",
         },
       ],
-      "subview": true,
       "title": "Kitchen",
       "type": "sections",
     },
     {
-      "back_path": "/fluvy-home/climate",
       "icon": "mdi:sofa",
       "max_columns": 3,
       "path": "room-living_room",
@@ -469,27 +391,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
             },
-            {
-              "current": "/fluvy-home/room-living_room",
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
           ],
           "type": "grid",
         },
@@ -502,12 +403,10 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
           "type": "grid",
         },
       ],
-      "subview": true,
       "title": "Living room",
       "type": "sections",
     },
     {
-      "back_path": "/fluvy-home/climate",
       "icon": "fluvy:home",
       "max_columns": 3,
       "path": "room-garden",
@@ -518,27 +417,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
             },
-            {
-              "current": "/fluvy-home/room-garden",
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
           ],
           "type": "grid",
         },
@@ -551,7 +429,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
           "type": "grid",
         },
       ],
-      "subview": true,
       "title": "Garden",
       "type": "sections",
     },
@@ -861,26 +738,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "weather": "weather.home",
             },
             {
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
-            {
               "entities": [
                 "light.living_room_lamp",
               ],
@@ -946,7 +803,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
       "type": "sections",
     },
     {
-      "back_path": "/fluvy-home/lights",
       "icon": "mdi:silverware-fork-knife",
       "max_columns": 3,
       "path": "room-kitchen",
@@ -957,32 +813,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
             },
-            {
-              "current": "/fluvy-home/room-kitchen",
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
-          ],
-          "type": "grid",
-        },
-        {
-          "cards": [
             {
               "entities": [
                 "switch.kitchen_light",
@@ -1006,13 +836,15 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
           "cards": [],
           "type": "grid",
         },
+        {
+          "cards": [],
+          "type": "grid",
+        },
       ],
-      "subview": true,
       "title": "Kitchen",
       "type": "sections",
     },
     {
-      "back_path": "/fluvy-home/lights",
       "icon": "mdi:sofa",
       "max_columns": 3,
       "path": "room-living_room",
@@ -1023,32 +855,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
             },
-            {
-              "current": "/fluvy-home/room-living_room",
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
-          ],
-          "type": "grid",
-        },
-        {
-          "cards": [
             {
               "entities": [
                 "light.living_room_lamp",
@@ -1072,58 +878,12 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
           "cards": [],
           "type": "grid",
         },
+        {
+          "cards": [],
+          "type": "grid",
+        },
       ],
-      "subview": true,
       "title": "Living room",
-      "type": "sections",
-    },
-    {
-      "back_path": "/fluvy-home/lights",
-      "icon": "fluvy:home",
-      "max_columns": 3,
-      "path": "room-garden",
-      "sections": [
-        {
-          "cards": [
-            {
-              "type": "custom:fluvy-hello-card",
-              "weather": "weather.home",
-            },
-            {
-              "current": "/fluvy-home/room-garden",
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
-          ],
-          "type": "grid",
-        },
-        {
-          "cards": [],
-          "type": "grid",
-        },
-        {
-          "cards": [],
-          "type": "grid",
-        },
-      ],
-      "subview": true,
-      "title": "Garden",
       "type": "sections",
     },
   ],
@@ -1143,26 +903,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
             {
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
-            },
-            {
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
             },
             {
               "area": "kitchen",
@@ -1209,7 +949,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
       "type": "sections",
     },
     {
-      "back_path": "/fluvy-home/rooms",
       "icon": "mdi:silverware-fork-knife",
       "max_columns": 3,
       "path": "room-kitchen",
@@ -1220,38 +959,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
             },
-            {
-              "current": "/fluvy-home/room-kitchen",
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
-            {
-              "icon": "fluvy:home",
-              "path": "/fluvy-home/rooms",
-              "title": "All rooms",
-              "type": "custom:fluvy-heading-card",
-            },
-          ],
-          "type": "grid",
-        },
-        {
-          "cards": [
             {
               "entities": [
                 "switch.kitchen_light",
@@ -1275,13 +982,15 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
           "cards": [],
           "type": "grid",
         },
+        {
+          "cards": [],
+          "type": "grid",
+        },
       ],
-      "subview": true,
       "title": "Kitchen",
       "type": "sections",
     },
     {
-      "back_path": "/fluvy-home/rooms",
       "icon": "mdi:sofa",
       "max_columns": 3,
       "path": "room-living_room",
@@ -1292,38 +1001,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
             },
-            {
-              "current": "/fluvy-home/room-living_room",
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
-            {
-              "icon": "fluvy:home",
-              "path": "/fluvy-home/rooms",
-              "title": "All rooms",
-              "type": "custom:fluvy-heading-card",
-            },
-          ],
-          "type": "grid",
-        },
-        {
-          "cards": [
             {
               "entities": [
                 "light.living_room_lamp",
@@ -1348,13 +1025,15 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
           "cards": [],
           "type": "grid",
         },
+        {
+          "cards": [],
+          "type": "grid",
+        },
       ],
-      "subview": true,
       "title": "Living room",
       "type": "sections",
     },
     {
-      "back_path": "/fluvy-home/rooms",
       "icon": "fluvy:home",
       "max_columns": 3,
       "path": "room-garden",
@@ -1365,38 +1044,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
               "type": "custom:fluvy-hello-card",
               "weather": "weather.home",
             },
-            {
-              "current": "/fluvy-home/room-garden",
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
-            {
-              "icon": "fluvy:home",
-              "path": "/fluvy-home/rooms",
-              "title": "All rooms",
-              "type": "custom:fluvy-heading-card",
-            },
-          ],
-          "type": "grid",
-        },
-        {
-          "cards": [
             {
               "rows": [
                 {
@@ -1417,8 +1064,11 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
           "cards": [],
           "type": "grid",
         },
+        {
+          "cards": [],
+          "type": "grid",
+        },
       ],
-      "subview": true,
       "title": "Garden",
       "type": "sections",
     },
@@ -1619,27 +1269,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
         {
           "cards": [
             {
-              "current": "/fluvy-home/room-kitchen",
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
-            {
               "icon": "fluvy:home",
               "path": "/fluvy-home/wall",
               "title": "Home",
@@ -1682,27 +1311,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
       "sections": [
         {
           "cards": [
-            {
-              "current": "/fluvy-home/room-living_room",
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
             {
               "icon": "fluvy:home",
               "path": "/fluvy-home/wall",
@@ -1748,27 +1356,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
         {
           "cards": [
             {
-              "current": "/fluvy-home/room-garden",
-              "rooms": [
-                {
-                  "icon": "mdi:silverware-fork-knife",
-                  "name": "Kitchen",
-                  "path": "/fluvy-home/room-kitchen",
-                },
-                {
-                  "icon": "mdi:sofa",
-                  "name": "Living room",
-                  "path": "/fluvy-home/room-living_room",
-                },
-                {
-                  "icon": "fluvy:home",
-                  "name": "Garden",
-                  "path": "/fluvy-home/room-garden",
-                },
-              ],
-              "type": "custom:fluvy-room-rail-card",
-            },
-            {
               "icon": "fluvy:home",
               "path": "/fluvy-home/wall",
               "title": "Home",
@@ -1806,7 +1393,6 @@ exports[`the dashboard templates > generate the same dashboard for the demo home
 
 exports[`the dashboard templates > lay a room’s appliances across its subview, on the wall across its two columns (golden file, #47) > rooms 1`] = `
 {
-  "back_path": "/fluvy-home/floor-ground",
   "icon": "mdi:silverware-fork-knife",
   "max_columns": 3,
   "path": "room-kitchen",
@@ -1817,43 +1403,6 @@ exports[`the dashboard templates > lay a room’s appliances across its subview,
           "type": "custom:fluvy-hello-card",
           "weather": "weather.home",
         },
-        {
-          "current": "/fluvy-home/room-kitchen",
-          "rooms": [
-            {
-              "icon": "mdi:silverware-fork-knife",
-              "name": "Kitchen",
-              "path": "/fluvy-home/room-kitchen",
-            },
-            {
-              "icon": "mdi:sofa",
-              "name": "Living room",
-              "path": "/fluvy-home/room-living_room",
-            },
-            {
-              "icon": "mdi:bed",
-              "name": "Bedroom",
-              "path": "/fluvy-home/room-bedroom",
-            },
-            {
-              "icon": "fluvy:home",
-              "name": "Garden",
-              "path": "/fluvy-home/room-garden",
-            },
-          ],
-          "type": "custom:fluvy-room-rail-card",
-        },
-        {
-          "icon": "fluvy:home",
-          "path": "/fluvy-home/floor-ground",
-          "title": "All rooms",
-          "type": "custom:fluvy-heading-card",
-        },
-      ],
-      "type": "grid",
-    },
-    {
-      "cards": [
         {
           "entities": [
             "switch.kitchen_light",
@@ -1871,6 +1420,10 @@ exports[`the dashboard templates > lay a room’s appliances across its subview,
           "type": "custom:fluvy-tile-card",
         },
       ],
+      "type": "grid",
+    },
+    {
+      "cards": [],
       "type": "grid",
     },
     {
@@ -1922,7 +1475,6 @@ exports[`the dashboard templates > lay a room’s appliances across its subview,
       "type": "grid",
     },
   ],
-  "subview": true,
   "title": "Kitchen",
   "type": "sections",
 }
@@ -1937,32 +1489,6 @@ exports[`the dashboard templates > lay a room’s appliances across its subview,
   "sections": [
     {
       "cards": [
-        {
-          "current": "/fluvy-home/room-kitchen",
-          "rooms": [
-            {
-              "icon": "mdi:silverware-fork-knife",
-              "name": "Kitchen",
-              "path": "/fluvy-home/room-kitchen",
-            },
-            {
-              "icon": "mdi:sofa",
-              "name": "Living room",
-              "path": "/fluvy-home/room-living_room",
-            },
-            {
-              "icon": "mdi:bed",
-              "name": "Bedroom",
-              "path": "/fluvy-home/room-bedroom",
-            },
-            {
-              "icon": "fluvy:home",
-              "name": "Garden",
-              "path": "/fluvy-home/room-garden",
-            },
-          ],
-          "type": "custom:fluvy-room-rail-card",
-        },
         {
           "icon": "fluvy:home",
           "path": "/fluvy-home/wall",

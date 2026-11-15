@@ -72,26 +72,6 @@ export const roomCard = (ctx: StrategyContext, area: AreaRegistryEntry): Card =>
  * page's first part, so Customise offers it as "Rail" beside the rooms, and a room's page steps to its neighbours
  * without going back to the list.
  */
-export const roomRail = (ctx: StrategyContext, current?: string): Card[] =>
-  part(ctx, 'rail', [
-    {
-      type: 'custom:fluvy-room-rail-card',
-      rooms: roomsOf(ctx.home).map((area) => ({
-        name: area.name,
-        icon: area.icon ?? 'fluvy:home',
-        path: roomPath(ctx.base, area),
-      })),
-      ...(current ? { current } : {}),
-    },
-  ]);
-
-/** The same sections, with the rail's chips on the first of them: an overview keeps the way to every room. */
-export const railFirst = (ctx: StrategyContext, sections: Section[]): Section[] => {
-  const [first, ...rest] = sections;
-  if (!first) return flowed(ctx, [roomRail(ctx)], []);
-  return [{ ...first, cards: [...roomRail(ctx), ...(first.cards ?? [])] }, ...rest];
-};
-
 /** A room's card as a part of its view. */
 export const roomPart = (
   ctx: StrategyContext,
@@ -110,7 +90,7 @@ export function roomsView(ctx: StrategyContext): Section[] {
   if (floors.length < 2)
     return flowed(
       ctx,
-      [roomRail(ctx), ...rooms.map((area) => roomPart(ctx, area))],
+      rooms.map((area) => roomPart(ctx, area)),
       [],
       columns,
     );
@@ -128,7 +108,6 @@ export function roomsView(ctx: StrategyContext): Section[] {
   return flowed(
     ctx,
     [
-      roomRail(ctx),
       ...floors.flatMap((floor) =>
         under(
           `floor:${floor.floor_id}`,
@@ -226,7 +205,7 @@ export function roomParts(home: HomeRegistry, areaId: string): RoomParts {
 export function roomSections(
   ctx: StrategyContext,
   area: AreaRegistryEntry,
-  back: RoomBack,
+  back: RoomBack | undefined,
   columns = 3,
 ): Section[] {
   const { home, t } = ctx;
@@ -323,7 +302,7 @@ export function roomSections(
   const sections = flowed(
     ctx,
     [
-      part(ctx, 'back', [heading(back.title, 'fluvy:home', [], back.path)]),
+      ...(back ? [part(ctx, 'back', [heading(back.title, 'fluvy:home', [], back.path)])] : []),
       // its scenes first, a tap each, as its card's quick actions are read before its devices (#172)
       ...part(
         ctx,
@@ -464,10 +443,8 @@ export function roomSections(
     [],
     columns,
   );
-  const [opening = section(heading(back.title, 'fluvy:home', [], back.path)), ...others] = sections;
-  return [
-    { ...opening, cards: [...roomRail(ctx, roomPath(ctx.base, area)), ...opening.cards] },
-    ...others,
+  const [opening = section(heading(area.name, area.icon ?? 'fluvy:home', [], roomPath(ctx.base, area))), ...others] = sections;
+  return [opening, ...others,
     ...applianceSections(ctx, parts.devices, columns),
   ];
 }

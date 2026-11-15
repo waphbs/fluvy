@@ -165,11 +165,19 @@ describe('the house’s order of its rooms on the automatic dashboards (#189)', 
       'Ground floor',
       'Upstairs',
       'Other rooms',
+      'Kitchen',
+      'Living room',
+      'Bedroom',
+      'Garden',
     ]);
     expect(await tabs({ sort: 'home_assistant', order: [] })).toEqual([
       'Upstairs',
       'Ground floor',
       'Other rooms',
+      'Bedroom',
+      'Living room',
+      'Kitchen',
+      'Garden',
     ]);
   });
 });

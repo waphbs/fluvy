@@ -1113,7 +1113,7 @@ describe('custom:fluvy-home strategy', () => {
       (card) => card.type === 'custom:fluvy-chips-card',
     ) as unknown as { chips: { path: string }[] };
     expect(tabs.chips.some((chip) => chip.path.includes('room-'))).toBe(false);
-    // a room's subview opens with the rail to its neighbours, the way back to every room, then what the room holds
+    // a room's subview opens with the way back to every room, then what the room holds
     const living = subviews.find((view) => view.path === 'room-living_room')!;
     const livingCards = living.sections
       .flatMap((section) => section.cards)
@@ -1121,8 +1121,7 @@ describe('custom:fluvy-home strategy', () => {
         (card) =>
           card.type !== 'custom:fluvy-hello-card' && card.type !== 'custom:fluvy-chips-card',
       );
-    expect(livingCards[0]).toMatchObject({ type: 'custom:fluvy-room-rail-card' });
-    expect(livingCards[1]).toMatchObject({
+    expect(livingCards[0]).toMatchObject({
       type: 'custom:fluvy-heading-card',
       title: 'All rooms',
       path: '/fluvy-home/rooms',
@@ -2650,12 +2649,11 @@ describe('custom:fluvy-home strategy — the house’s scenes (#172)', () => {
     expect(parts.rest).toEqual([]);
     const { views } = await generate({ type: 'custom:fluvy-rooms' }, hass as never);
     const cards = cardsIn([views.find((view) => view.path === 'room-lounge')!]);
-    // the greeting, the rail to its neighbours, the way back, then its scenes before its lights
-    expect(cards.map((card) => card.type).slice(1, 5)).toEqual([
-      'custom:fluvy-room-rail-card',
-      'custom:fluvy-heading-card',
+    // the greeting, then its scenes before its lights — the room is a tab of its dashboard, not a page with a way back
+    expect(cards.map((card) => card.type).slice(1, 4)).toEqual([
       'custom:fluvy-scenes-card',
       'custom:fluvy-heading-card',
+      'custom:fluvy-tile-card',
     ]);
     expect(scenesCards(cards)).toEqual([
       expect.objectContaining({ title: 'Scenes', scenes: parts.scenes }),

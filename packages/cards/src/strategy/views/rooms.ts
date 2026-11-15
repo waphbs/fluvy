@@ -1,11 +1,11 @@
 import type { AreaRegistryEntry } from '@fluvy/core';
 import { flowed } from '../layout.js';
-import { roomPart, roomRail, roomsOf } from '../rooms.js';
+import { roomPart, roomSections, roomsOf } from '../rooms.js';
 import type { Section, StrategyContext, ViewSpec } from '../types.js';
 
 /*
  * The rooms dashboard (`custom:fluvy-rooms`): a tab a floor when the house has two or more, else every room on one
- * tab; each room a card that opens the room's own subview.
+ * tab, and a tab a room after them — the room's own page beside its neighbours, in the tab bar.
  */
 
 /** The floors with a room on them. */
@@ -20,12 +20,22 @@ const floorsOf = (ctx: StrategyContext) => {
 const grid = (ctx: StrategyContext, rooms: readonly AreaRegistryEntry[]): Section[] =>
   flowed(
     ctx,
-    [roomRail(ctx), ...rooms.map((area) => roomPart(ctx, area))],
+    rooms.map((area) => roomPart(ctx, area)),
     [],
     3,
   );
 
-/** The views: one a floor (its name, its icon) plus the rooms on no floor, or all the rooms as one. */
+/** A room's own tab: its page, the tab bar leading to its neighbours. */
+const roomTabView = (area: AreaRegistryEntry): ViewSpec => ({
+  key: `room-${area.area_id}`,
+  icon: area.icon ?? 'fluvy:home',
+  title: 'strategy.rooms',
+  name: area.name,
+  build: (ctx) => roomSections(ctx, area, undefined, ctx.more?.columns ?? 3),
+  when: () => true,
+});
+
+/** The views: one a floor (its name, its icon) plus the rooms on no floor, or all the rooms as one; then a tab a room. */
 export function roomsViews(ctx: StrategyContext): ViewSpec[] {
   const { rooms, floors } = floorsOf(ctx);
   const all: ViewSpec = {
@@ -35,7 +45,8 @@ export function roomsViews(ctx: StrategyContext): ViewSpec[] {
     build: (c) => grid(c, rooms),
     when: () => true,
   };
-  if (floors.length < 2) return [all];
+  const roomTabs = rooms.map(roomTabView);
+  if (floors.length < 2) return [{ ...all }, ...roomTabs];
   const unplaced = rooms.filter(
     (room) => !floors.some((floor) => floor.floor_id === room.floor_id),
   );
@@ -61,12 +72,6 @@ export function roomsViews(ctx: StrategyContext): ViewSpec[] {
           },
         ]
       : []),
+    ...roomTabs,
   ];
-}
-
-/** The tab a room is reached from: its floor's, or the rooms' when there is one tab or the room has no floor. */
-export function roomTab(ctx: StrategyContext, area: AreaRegistryEntry): string {
-  const { floors } = floorsOf(ctx);
-  const floor = floors.length >= 2 && floors.find((f) => f.floor_id === area.floor_id);
-  return floor ? `floor-${floor.floor_id}` : 'rooms';
 }

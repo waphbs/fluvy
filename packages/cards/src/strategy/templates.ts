@@ -9,11 +9,11 @@ import type {
   View,
   ViewSpec,
 } from './types.js';
-import { CLIMATE_VIEWS, climateRoomView } from './views/climate.js';
+import { climateViews } from './views/climate.js';
 import { ENERGY_VIEWS } from './views/energy.js';
 import { HOME_VIEWS } from './views/home.js';
-import { LIGHT_VIEWS, lightsRoomView } from './views/lights.js';
-import { roomTab, roomsViews } from './views/rooms.js';
+import { lightViews } from './views/lights.js';
+import { roomsViews } from './views/rooms.js';
 import { SECURITY_VIEWS } from './views/security.js';
 import { WALL_VIEWS, wallRooms } from './views/wall.js';
 
@@ -223,7 +223,6 @@ export const TEMPLATES: readonly Template[] = [
     columns: 3,
     header: 'hello',
     views: roomsViews,
-    rooms: (ctx) => everyRoom(ctx, (area) => roomTab(ctx, area)),
     options: [
       ...ROOMS,
       THERMOSTAT,
@@ -302,14 +301,7 @@ export const TEMPLATES: readonly Template[] = [
     description: 'template.lights_sub',
     columns: 3,
     header: 'hello',
-    views: LIGHT_VIEWS,
-    // every room whose lights count: the room pages show their lights alone
-    rooms: (ctx) =>
-      roomsOf(ctx.home).map((area) => ({
-        area,
-        back: { path: `${ctx.base}/lights`, title: ctx.t('strategy.all_rooms') },
-      })),
-    room: lightsRoomView,
+    views: lightViews,
     options: [HIDE, TILES, SWITCHES, GROUPS, GREETING_TABS, BACKGROUND, CAPS, EXCLUDE],
   },
   {
@@ -321,13 +313,7 @@ export const TEMPLATES: readonly Template[] = [
     description: 'template.climate_sub',
     columns: 3,
     header: 'hello',
-    views: CLIMATE_VIEWS,
-    rooms: (ctx) =>
-      roomsOf(ctx.home).map((area) => ({
-        area,
-        back: { path: `${ctx.base}/climate`, title: ctx.t('strategy.all_rooms') },
-      })),
-    room: climateRoomView,
+    views: climateViews,
     options: [
       HIDE,
       THERMOSTAT,
