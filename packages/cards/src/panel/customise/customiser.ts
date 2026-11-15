@@ -27,6 +27,7 @@ import { edited, editOf, hiddenBy, pinned, withOptions } from '../../strategy/ed
 import { generateWith } from '../../strategy/generate.js';
 import type { Card, DashboardEdit, FluvyStrategyConfig, ListEdit } from '../../strategy/types.js';
 import type { DashboardInfo, PanelContext } from '../model.js';
+import { localizeCatalogue } from './catalogue.js';
 import { choice } from '../sections.js';
 import {
   alsoOf,
@@ -1625,6 +1626,8 @@ export class Customiser {
   /** Customise for a dashboard, by its url path: the dashboards and their views to pick from, then the open view. */
   render(ctx: PanelContext, urlPath: string): TemplateResult {
     this.ctx = ctx;
+    // the card picker's names and descriptions in this dashboard's language, before anything lists them
+    localizeCatalogue(ctx.hass);
     if (urlPath !== this.urlPath) {
       this.urlPath = urlPath;
       this.viewId = '';
